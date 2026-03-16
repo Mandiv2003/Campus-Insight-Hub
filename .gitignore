@@ -16,7 +16,7 @@
   .env.local
 
   # Documentation
-  docs/
- 
-
+docs/*.pdf
+docs/*.md
+  
 
