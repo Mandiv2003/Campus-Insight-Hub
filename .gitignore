@@ -1,0 +1,22 @@
+  # Backend
+  backend/target/
+  backend/.mvn/
+  *.class
+  *.jar
+
+  # Frontend
+  frontend/node_modules/
+  frontend/dist/
+
+  # IDE
+  .idea/
+  *.iml
+  .vscode/
+  .env
+  .env.local
+
+  # Documentation
+docs/*.pdf
+docs/*.md
+  
+
