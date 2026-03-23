@@ -1,0 +1,24 @@
+# ============================================================
+# LOCAL DEVELOPER OVERRIDES
+# Copy this file to application-local.properties (same folder)
+# and fill in real values. That file is gitignored — never commit it.
+#
+# Start the backend with:
+#   ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+# ============================================================
+
+# ── Google OAuth2 ────────────────────────────────────────────
+# Get these from: https://console.cloud.google.com
+#   APIs & Services → Credentials → OAuth 2.0 Client ID
+#   Authorized redirect URI: http://localhost:8080/oauth2/callback/google
+spring.security.oauth2.client.registration.google.client-id=PASTE_CLIENT_ID_HERE
+spring.security.oauth2.client.registration.google.client-secret=PASTE_CLIENT_SECRET_HERE
+
+# ── JWT secret ───────────────────────────────────────────────
+# Any random string >= 32 characters
+jwt.secret=change-me-to-any-random-string-at-least-32-chars
+
+# ── Database (only override if your setup differs from defaults) ──
+# spring.datasource.url=jdbc:postgresql://localhost:5432/smartcampus
+# spring.datasource.username=postgres
+# spring.datasource.password=postgres
