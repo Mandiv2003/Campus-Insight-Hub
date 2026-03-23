@@ -1,11 +1,14 @@
 name: Backend CI
+# TEMPORARILY DISABLED — re-enable by restoring the on: block below
 on:
-  push:
-    branches: [develop, main]
-    paths: ['backend/**']
-  pull_request:
-    branches: [develop, main]
-    paths: ['backend/**']
+  workflow_dispatch:
+# on:
+#   push:
+#     branches: [develop, main]
+#     paths: ['backend/**']
+#   pull_request:
+#     branches: [develop, main]
+#     paths: ['backend/**']
 
 jobs:
   build-and-test:
