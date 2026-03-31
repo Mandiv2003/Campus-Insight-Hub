@@ -26,8 +26,11 @@ import BookingFormPage from './pages/bookings/BookingFormPage'
 import BookingDetailPage from './pages/bookings/BookingDetailPage'
 import AdminBookingQueuePage from './pages/bookings/AdminBookingQueuePage'
 
-// Placeholders — filled in by M3
-const Placeholder = ({ name }: { name: string }) => <Box p={4}>{name} — coming soon</Box>
+// Incidents — M3
+import IncidentListPage from './pages/incidents/IncidentListPage'
+import IncidentFormPage from './pages/incidents/IncidentFormPage'
+import IncidentDetailPage from './pages/incidents/IncidentDetailPage'
+import AdminIncidentQueuePage from './pages/incidents/AdminIncidentQueuePage'
 
 const theme = createTheme({
   palette: { primary: { main: '#1565c0' } },
@@ -71,8 +74,11 @@ function AppLayout() {
         <Route path="/bookings/:id" element={<ProtectedRoute><BookingDetailPage /></ProtectedRoute>} />
         <Route path="/admin/bookings" element={<ProtectedRoute requireAdmin><AdminBookingQueuePage /></ProtectedRoute>} />
 
-        {/* Placeholder for M3 */}
-        <Route path="/tickets/*"   element={<ProtectedRoute><Placeholder name="Tickets" /></ProtectedRoute>} />
+        {/* Incidents — M3 */}
+        <Route path="/tickets"          element={<ProtectedRoute><IncidentListPage /></ProtectedRoute>} />
+        <Route path="/tickets/new"      element={<ProtectedRoute><IncidentFormPage /></ProtectedRoute>} />
+        <Route path="/tickets/:id"      element={<ProtectedRoute><IncidentDetailPage /></ProtectedRoute>} />
+        <Route path="/admin/tickets"    element={<ProtectedRoute requireAdmin><AdminIncidentQueuePage /></ProtectedRoute>} />
 
         {/* Admin */}
         <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboardPage /></ProtectedRoute>} />
