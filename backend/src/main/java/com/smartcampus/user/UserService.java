@@ -1,11 +1,14 @@
 package com.smartcampus.user;
 
+import com.smartcampus.common.exception.ConflictException;
 import com.smartcampus.common.exception.ForbiddenException;
 import com.smartcampus.common.exception.ResourceNotFoundException;
+import com.smartcampus.common.exception.UnauthorizedException;
 import com.smartcampus.user.dto.UserDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +21,41 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    @Transactional
+    public User registerLocalUser(String fullName, String email, String username, String rawPassword) {
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new ConflictException("An account with this email already exists");
+        }
+        String trimmedUsername = (username != null && !username.isBlank()) ? username.trim() : null;
+        if (trimmedUsername != null && userRepository.findByUsername(trimmedUsername).isPresent()) {
+            throw new ConflictException("Username is already taken");
+        }
+        User user = User.builder()
+            .email(email)
+            .fullName(fullName)
+            .username(trimmedUsername)
+            .passwordHash(passwordEncoder.encode(rawPassword))
+            .provider("local")
+            .role(Role.USER)
+            .active(true)
+            .build();
+        return userRepository.save(user);
+    }
+
+    public User loginLocalUser(String identifier, String rawPassword) {
+        User user = userRepository.findByEmail(identifier)
+            .or(() -> userRepository.findByUsername(identifier))
+            .orElseThrow(() -> new UnauthorizedException("Invalid email/username or password"));
+        if (user.getPasswordHash() == null || !passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
+            throw new UnauthorizedException("Invalid email/username or password");
+        }
+        if (!user.isActive()) {
+            throw new ForbiddenException("This account has been deactivated");
+        }
+        return user;
+    }
 
     @Transactional
     public User upsertGoogleUser(String email, String name, String providerId, String avatarUrl) {

@@ -27,8 +27,14 @@ public class User {
     @Column(nullable = false)
     private String provider = "google";
 
-    @Column(name = "provider_id", nullable = false, unique = true)
+    @Column(name = "provider_id", unique = true)
     private String providerId;
+
+    @Column(name = "password_hash")
+    private String passwordHash;
+
+    @Column(unique = true)
+    private String username;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
