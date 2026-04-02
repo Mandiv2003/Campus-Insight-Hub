@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import NotificationBell from '../notifications/NotificationBell'
 
 export default function Navbar() {
-  const { user, logout, isAdmin } = useAuth()
+  const { user, logout, isAdmin, isTechnician } = useAuth()
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -25,6 +25,9 @@ export default function Navbar() {
             <Button color="inherit" component={Link} to="/tickets">Tickets</Button>
             {isAdmin() && (
               <Button color="inherit" component={Link} to="/admin">Admin</Button>
+            )}
+            {isTechnician() && (
+              <Button color="inherit" component={Link} to="/admin/tickets">Ticket Queue</Button>
             )}
             <NotificationBell />
             <Button color="inherit" onClick={handleLogout}>Logout</Button>

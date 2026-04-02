@@ -78,7 +78,7 @@ function AppLayout() {
         <Route path="/tickets"          element={<ProtectedRoute><IncidentListPage /></ProtectedRoute>} />
         <Route path="/tickets/new"      element={<ProtectedRoute><IncidentFormPage /></ProtectedRoute>} />
         <Route path="/tickets/:id"      element={<ProtectedRoute><IncidentDetailPage /></ProtectedRoute>} />
-        <Route path="/admin/tickets"    element={<ProtectedRoute requireAdmin><AdminIncidentQueuePage /></ProtectedRoute>} />
+        <Route path="/admin/tickets"    element={<ProtectedRoute requireAdminOrTechnician><AdminIncidentQueuePage /></ProtectedRoute>} />
 
         {/* Admin */}
         <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboardPage /></ProtectedRoute>} />
