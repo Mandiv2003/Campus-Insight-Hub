@@ -24,19 +24,24 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
-            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers("/oauth2/**", "/login/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/resources/**").permitAll()
                 .requestMatchers(HttpMethod.GET,
                     "/api/v1/resources/{resourceId}/bookings/availability").permitAll()
-                // Admin-only
+                // Ticket queue accessible to admin and technician
+                .requestMatchers("/api/v1/admin/tickets", "/api/v1/admin/tickets/**").hasAnyRole("ADMIN", "TECHNICIAN")
+                // Everything else under /admin is admin-only
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 // Everything else requires authentication
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2
+                .redirectionEndpoint(endpoint -> endpoint
+                    .baseUri("/oauth2/callback/*")
+                )
                 .successHandler(oAuth2SuccessHandler)
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

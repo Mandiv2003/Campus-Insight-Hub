@@ -2,7 +2,7 @@ import { Box, Button, Typography, Paper } from '@mui/material'
 
 export default function LoginPage() {
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:8080/oauth2/authorize/google'
+    window.location.href = 'http://localhost:8080/oauth2/authorization/google'
   }
 
   return (
