@@ -1,57 +1,51 @@
 package com.smartcampus.resource;
 
-import com.smartcampus.user.User;
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-@Entity
-@Table(name = "resources")
+@Document(collection = "resources")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Resource {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @Builder.Default
+    private String id = UUID.randomUUID().toString();
 
-    @Column(nullable = false)
     private String name;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private ResourceType type;
 
     private Integer capacity;
 
-    @Column(nullable = false)
     private String location;
 
-    @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Builder.Default
     private ResourceStatus status = ResourceStatus.ACTIVE;
 
-    @Column(name = "image_url")
+    @Field("image_url")
     private String imageUrl;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by", nullable = false)
-    private User createdBy;
+    @Field("created_by_id")
+    private String createdById;
 
-    @OneToMany(mappedBy = "resource", cascade = CascadeType.ALL,
-               orphanRemoval = true, fetch = FetchType.LAZY)
+    @Field("availability_windows")
     @Builder.Default
     private List<AvailabilityWindow> availabilityWindows = new ArrayList<>();
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Field("created_at")
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(name = "updated_at", nullable = false)
+    @Field("updated_at")
+    @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 }

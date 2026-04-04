@@ -4,15 +4,14 @@ import com.smartcampus.notification.Notification;
 import com.smartcampus.notification.NotificationType;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 public record NotificationDto(
-    UUID id,
+    String id,
     NotificationType type,
     String title,
     String message,
     String entityType,
-    UUID entityId,
+    String entityId,
     boolean read,
     LocalDateTime createdAt
 ) {

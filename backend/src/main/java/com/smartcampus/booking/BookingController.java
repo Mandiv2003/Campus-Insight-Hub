@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -25,33 +24,30 @@ public class BookingController {
     private final BookingService bookingService;
     private final AuthUtils authUtils;
 
-    // POST /api/v1/bookings — authenticated users + admins
     @PostMapping("/api/v1/bookings")
     public ResponseEntity<ApiResponse<BookingResponseDto>> create(
             @Valid @RequestBody BookingRequestDto dto) {
 
-        UUID currentUserId = authUtils.getCurrentUser().getId();
+        String currentUserId = authUtils.getCurrentUser().getId();
         return ResponseEntity.status(201)
             .body(ApiResponse.success(bookingService.create(dto, currentUserId)));
     }
 
-    // GET /api/v1/bookings/my?status=PENDING&page=0&size=10
     @GetMapping("/api/v1/bookings/my")
     public ResponseEntity<ApiResponse<PagedResponse<BookingResponseDto>>> getMyBookings(
             @RequestParam(required = false) BookingStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        UUID currentUserId = authUtils.getCurrentUser().getId();
+        String currentUserId = authUtils.getCurrentUser().getId();
         PageRequest pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return ResponseEntity.ok(ApiResponse.success(
             PagedResponse.of(bookingService.getMyBookings(currentUserId, status, pageable))
         ));
     }
 
-    // GET /api/v1/bookings/{id}
     @GetMapping("/api/v1/bookings/{id}")
-    public ResponseEntity<ApiResponse<BookingResponseDto>> getById(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<BookingResponseDto>> getById(@PathVariable String id) {
         var currentUser = authUtils.getCurrentUser();
         boolean isAdmin = authUtils.isAdmin();
         return ResponseEntity.ok(ApiResponse.success(
@@ -59,10 +55,9 @@ public class BookingController {
         ));
     }
 
-    // PATCH /api/v1/bookings/{id}/cancel
     @PatchMapping("/api/v1/bookings/{id}/cancel")
     public ResponseEntity<ApiResponse<BookingResponseDto>> cancel(
-            @PathVariable UUID id,
+            @PathVariable String id,
             @RequestBody(required = false) BookingDecisionDto dto) {
 
         var currentUser = authUtils.getCurrentUser();
@@ -72,11 +67,10 @@ public class BookingController {
         ));
     }
 
-    // GET /api/v1/admin/bookings?resourceId=&status=&from=&to=&page=0&size=10
     @GetMapping("/api/v1/admin/bookings")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PagedResponse<BookingResponseDto>>> listAll(
-            @RequestParam(required = false) UUID resourceId,
+            @RequestParam(required = false) String resourceId,
             @RequestParam(required = false) BookingStatus status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
@@ -89,29 +83,26 @@ public class BookingController {
         ));
     }
 
-    // PATCH /api/v1/admin/bookings/{id}/approve
     @PatchMapping("/api/v1/admin/bookings/{id}/approve")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<BookingResponseDto>> approve(@PathVariable UUID id) {
-        UUID reviewerId = authUtils.getCurrentUser().getId();
+    public ResponseEntity<ApiResponse<BookingResponseDto>> approve(@PathVariable String id) {
+        String reviewerId = authUtils.getCurrentUser().getId();
         return ResponseEntity.ok(ApiResponse.success(bookingService.approve(id, reviewerId)));
     }
 
-    // PATCH /api/v1/admin/bookings/{id}/reject
     @PatchMapping("/api/v1/admin/bookings/{id}/reject")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<BookingResponseDto>> reject(
-            @PathVariable UUID id,
+            @PathVariable String id,
             @RequestBody BookingDecisionDto dto) {
 
-        UUID reviewerId = authUtils.getCurrentUser().getId();
+        String reviewerId = authUtils.getCurrentUser().getId();
         return ResponseEntity.ok(ApiResponse.success(bookingService.reject(id, dto, reviewerId)));
     }
 
-    // GET /api/v1/resources/{resourceId}/bookings/availability?date=2026-04-10 — Public
     @GetMapping("/api/v1/resources/{resourceId}/bookings/availability")
     public ResponseEntity<ApiResponse<List<TimeSlotDto>>> getAvailability(
-            @PathVariable UUID resourceId,
+            @PathVariable String resourceId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 
         return ResponseEntity.ok(ApiResponse.success(

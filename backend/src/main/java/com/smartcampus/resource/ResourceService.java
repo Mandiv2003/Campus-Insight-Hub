@@ -2,16 +2,18 @@ package com.smartcampus.resource;
 
 import com.smartcampus.common.exception.ResourceNotFoundException;
 import com.smartcampus.resource.dto.*;
-import com.smartcampus.user.User;
-import com.smartcampus.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -19,32 +21,42 @@ import java.util.UUID;
 public class ResourceService {
 
     private final ResourceRepository resourceRepository;
-    private final AvailabilityWindowRepository availabilityWindowRepository;
-    private final UserRepository userRepository;
+    private final MongoTemplate mongoTemplate;
 
-    // ── List (public, filters applied via Specification) ──────────────────
-    @Transactional(readOnly = true)
+    // ── List (public, filters applied via MongoTemplate) ────────────────
     public Page<ResourceResponseDto> listResources(
             ResourceType type, String location, Integer minCapacity,
             ResourceStatus status, Pageable pageable) {
 
-        return resourceRepository
-            .findAll(ResourceSpecification.withFilters(type, location, minCapacity, status), pageable)
-            .map(ResourceResponseDto::from);
+        Criteria criteria = Criteria.where("status").ne(ResourceStatus.ARCHIVED.name());
+
+        if (type != null)
+            criteria.and("type").is(type.name());
+
+        if (location != null && !location.isBlank())
+            criteria.and("location").regex(location, "i");
+
+        if (minCapacity != null)
+            criteria.and("capacity").gte(minCapacity);
+
+        if (status != null)
+            criteria.and("status").is(status.name());
+
+        Query query = new Query(criteria).with(pageable);
+        List<Resource> resources = mongoTemplate.find(query, Resource.class);
+        long total = mongoTemplate.count(new Query(criteria), Resource.class);
+
+        return PageableExecutionUtils.getPage(resources, pageable, () -> total)
+                .map(ResourceResponseDto::from);
     }
 
-    // ── Get single resource ────────────────────────────────────────────────
-    @Transactional(readOnly = true)
-    public ResourceResponseDto getById(UUID id) {
+    // ── Get single resource ──────────────────────────────────────────────
+    public ResourceResponseDto getById(String id) {
         return ResourceResponseDto.from(findOrThrow(id));
     }
 
-    // ── Create ─────────────────────────────────────────────────────────────
-    @Transactional
-    public ResourceResponseDto create(ResourceRequestDto dto, UUID createdById) {
-        User creator = userRepository.findById(createdById)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found: " + createdById));
-
+    // ── Create ──────────────────────────────────────────────────────────
+    public ResourceResponseDto create(ResourceRequestDto dto, String createdById) {
         Resource resource = Resource.builder()
             .name(dto.name())
             .type(dto.type())
@@ -53,7 +65,7 @@ public class ResourceService {
             .description(dto.description())
             .imageUrl(dto.imageUrl())
             .status(ResourceStatus.ACTIVE)
-            .createdBy(creator)
+            .createdById(createdById)
             .build();
 
         if (dto.availabilityWindows() != null) {
@@ -61,7 +73,6 @@ public class ResourceService {
             dto.availabilityWindows().forEach(w ->
                 resource.getAvailabilityWindows().add(
                     AvailabilityWindow.builder()
-                        .resource(resource)
                         .dayOfWeek(w.dayOfWeek())
                         .startTime(w.startTime())
                         .endTime(w.endTime())
@@ -73,9 +84,8 @@ public class ResourceService {
         return ResourceResponseDto.from(resourceRepository.save(resource));
     }
 
-    // ── Full update (PUT) — replaces all fields and windows ───────────────
-    @Transactional
-    public ResourceResponseDto update(UUID id, ResourceRequestDto dto) {
+    // ── Full update (PUT) ────────────────────────────────────────────────
+    public ResourceResponseDto update(String id, ResourceRequestDto dto) {
         Resource resource = findOrThrow(id);
 
         resource.setName(dto.name());
@@ -91,7 +101,6 @@ public class ResourceService {
             dto.availabilityWindows().forEach(w ->
                 resource.getAvailabilityWindows().add(
                     AvailabilityWindow.builder()
-                        .resource(resource)
                         .dayOfWeek(w.dayOfWeek())
                         .startTime(w.startTime())
                         .endTime(w.endTime())
@@ -103,57 +112,51 @@ public class ResourceService {
         return ResourceResponseDto.from(resourceRepository.save(resource));
     }
 
-    // ── Status update (PATCH) ──────────────────────────────────────────────
-    @Transactional
-    public ResourceResponseDto updateStatus(UUID id, ResourceStatus newStatus) {
+    // ── Status update (PATCH) ────────────────────────────────────────────
+    public ResourceResponseDto updateStatus(String id, ResourceStatus newStatus) {
         Resource resource = findOrThrow(id);
         resource.setStatus(newStatus);
         resource.setUpdatedAt(LocalDateTime.now());
         return ResourceResponseDto.from(resourceRepository.save(resource));
     }
 
-    // ── Soft delete — sets status to ARCHIVED ─────────────────────────────
-    @Transactional
-    public void delete(UUID id) {
+    // ── Soft delete → ARCHIVED ───────────────────────────────────────────
+    public void delete(String id) {
         Resource resource = findOrThrow(id);
-
-        // TODO: After M2 completes their Booking entity, inject BookingRepository
-        // and uncomment this conflict check:
-        //
-        // boolean hasActive = bookingRepository.existsByResourceIdAndStatusIn(
-        //     id, List.of(BookingStatus.PENDING, BookingStatus.APPROVED));
-        // if (hasActive)
-        //     throw new ConflictException("Cannot archive resource with active or pending bookings");
-
         resource.setStatus(ResourceStatus.ARCHIVED);
         resource.setUpdatedAt(LocalDateTime.now());
         resourceRepository.save(resource);
     }
 
-    // ── Availability windows ───────────────────────────────────────────────
-    @Transactional
-    public AvailabilityWindowDto addAvailabilityWindow(UUID resourceId, AvailabilityWindowDto dto) {
+    // ── Add availability window (embedded) ──────────────────────────────
+    public AvailabilityWindowDto addAvailabilityWindow(String resourceId, AvailabilityWindowDto dto) {
         Resource resource = findOrThrow(resourceId);
         AvailabilityWindow window = AvailabilityWindow.builder()
-            .resource(resource)
+            .id(UUID.randomUUID().toString())
             .dayOfWeek(dto.dayOfWeek())
             .startTime(dto.startTime())
             .endTime(dto.endTime())
             .build();
-        return AvailabilityWindowDto.from(availabilityWindowRepository.save(window));
+        resource.getAvailabilityWindows().add(window);
+        resource.setUpdatedAt(LocalDateTime.now());
+        resourceRepository.save(resource);
+        return AvailabilityWindowDto.from(window);
     }
 
-    @Transactional
-    public void deleteAvailabilityWindow(UUID resourceId, UUID windowId) {
-        AvailabilityWindow window = availabilityWindowRepository
-            .findByIdAndResourceId(windowId, resourceId)
-            .orElseThrow(() -> new ResourceNotFoundException(
-                "Availability window not found: " + windowId));
-        availabilityWindowRepository.delete(window);
+    // ── Delete availability window (embedded) ────────────────────────────
+    public void deleteAvailabilityWindow(String resourceId, String windowId) {
+        Resource resource = findOrThrow(resourceId);
+        boolean removed = resource.getAvailabilityWindows()
+            .removeIf(w -> windowId.equals(w.getId()));
+        if (!removed) {
+            throw new ResourceNotFoundException("Availability window not found: " + windowId);
+        }
+        resource.setUpdatedAt(LocalDateTime.now());
+        resourceRepository.save(resource);
     }
 
-    // ── Internal helper ────────────────────────────────────────────────────
-    private Resource findOrThrow(UUID id) {
+    // ── Internal helper ──────────────────────────────────────────────────
+    private Resource findOrThrow(String id) {
         return resourceRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Resource not found: " + id));
     }

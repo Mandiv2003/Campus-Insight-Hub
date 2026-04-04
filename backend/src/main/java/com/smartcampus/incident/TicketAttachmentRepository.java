@@ -1,16 +1,15 @@
 package com.smartcampus.incident;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
-public interface TicketAttachmentRepository extends JpaRepository<TicketAttachment, UUID> {
+public interface TicketAttachmentRepository extends MongoRepository<TicketAttachment, String> {
 
-    List<TicketAttachment> findByTicketId(UUID ticketId);
+    List<TicketAttachment> findByTicketId(String ticketId);
 
-    long countByTicketId(UUID ticketId);
+    long countByTicketId(String ticketId);
 
-    Optional<TicketAttachment> findByIdAndTicketId(UUID id, UUID ticketId);
+    Optional<TicketAttachment> findByIdAndTicketId(String id, String ticketId);
 }

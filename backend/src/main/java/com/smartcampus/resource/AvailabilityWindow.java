@@ -1,32 +1,26 @@
 package com.smartcampus.resource;
 
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.UUID;
 
-@Entity
-@Table(name = "availability_windows")
+// Embedded subdocument — NOT a standalone @Document collection.
+// Stored inside the Resource document's availabilityWindows array.
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class AvailabilityWindow {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @Builder.Default
+    private String id = UUID.randomUUID().toString();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resource_id", nullable = false)
-    private Resource resource;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "day_of_week", nullable = false)
+    @Field("day_of_week")
     private DayOfWeek dayOfWeek;
 
-    @Column(name = "start_time", nullable = false)
+    @Field("start_time")
     private LocalTime startTime;
 
-    @Column(name = "end_time", nullable = false)
+    @Field("end_time")
     private LocalTime endTime;
 }

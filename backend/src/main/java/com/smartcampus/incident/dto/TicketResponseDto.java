@@ -1,21 +1,22 @@
 package com.smartcampus.incident.dto;
 
 import com.smartcampus.incident.IncidentTicket;
+import com.smartcampus.incident.TicketAttachment;
 import com.smartcampus.incident.TicketCategory;
+import com.smartcampus.incident.TicketComment;
 import com.smartcampus.incident.TicketPriority;
 import com.smartcampus.incident.TicketStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 public record TicketResponseDto(
-    UUID id,
-    UUID resourceId,
+    String id,
+    String resourceId,
     String resourceName,
-    UUID reportedById,
+    String reportedById,
     String reportedByName,
-    UUID assignedToId,
+    String assignedToId,
     String assignedToName,
     String title,
     String description,
@@ -33,15 +34,17 @@ public record TicketResponseDto(
     LocalDateTime createdAt,
     LocalDateTime updatedAt
 ) {
-    public static TicketResponseDto from(IncidentTicket t) {
+    public static TicketResponseDto from(IncidentTicket t,
+                                         List<TicketAttachment> attachments,
+                                         List<TicketComment> comments) {
         return new TicketResponseDto(
             t.getId(),
-            t.getResource() != null ? t.getResource().getId() : null,
-            t.getResource() != null ? t.getResource().getName() : null,
-            t.getReportedBy().getId(),
-            t.getReportedBy().getFullName(),
-            t.getAssignedTo() != null ? t.getAssignedTo().getId() : null,
-            t.getAssignedTo() != null ? t.getAssignedTo().getFullName() : null,
+            t.getResourceId(),
+            t.getResourceName(),
+            t.getReportedById(),
+            t.getReportedByName(),
+            t.getAssignedToId(),
+            t.getAssignedToName(),
             t.getTitle(),
             t.getDescription(),
             t.getCategory(),
@@ -53,23 +56,23 @@ public record TicketResponseDto(
             t.getResolutionNotes(),
             t.getRejectionReason(),
             t.getResolvedAt(),
-            t.getAttachments().stream().map(AttachmentResponseDto::from).toList(),
-            t.getComments().stream().map(CommentResponseDto::from).toList(),
+            attachments.stream().map(AttachmentResponseDto::from).toList(),
+            comments.stream().map(CommentResponseDto::from).toList(),
             t.getCreatedAt(),
             t.getUpdatedAt()
         );
     }
 
-    // Lightweight version for list views — no attachments/comments
+    // Lightweight version for list views — no attachments/comments loaded
     public static TicketResponseDto summary(IncidentTicket t) {
         return new TicketResponseDto(
             t.getId(),
-            t.getResource() != null ? t.getResource().getId() : null,
-            t.getResource() != null ? t.getResource().getName() : null,
-            t.getReportedBy().getId(),
-            t.getReportedBy().getFullName(),
-            t.getAssignedTo() != null ? t.getAssignedTo().getId() : null,
-            t.getAssignedTo() != null ? t.getAssignedTo().getFullName() : null,
+            t.getResourceId(),
+            t.getResourceName(),
+            t.getReportedById(),
+            t.getReportedByName(),
+            t.getAssignedToId(),
+            t.getAssignedToName(),
             t.getTitle(),
             t.getDescription(),
             t.getCategory(),

@@ -4,15 +4,14 @@ import com.smartcampus.booking.Booking;
 import com.smartcampus.booking.BookingStatus;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 public record BookingResponseDto(
-    UUID id,
-    UUID resourceId,
+    String id,
+    String resourceId,
     String resourceName,
-    UUID requestedById,
+    String requestedById,
     String requestedByName,
-    UUID reviewedById,
+    String reviewedById,
     String reviewedByName,
     String title,
     String purpose,
@@ -29,12 +28,12 @@ public record BookingResponseDto(
     public static BookingResponseDto from(Booking b) {
         return new BookingResponseDto(
             b.getId(),
-            b.getResource().getId(),
-            b.getResource().getName(),
-            b.getRequestedBy().getId(),
-            b.getRequestedBy().getFullName(),
-            b.getReviewedBy() != null ? b.getReviewedBy().getId() : null,
-            b.getReviewedBy() != null ? b.getReviewedBy().getFullName() : null,
+            b.getResourceId(),
+            b.getResourceName(),
+            b.getRequestedById(),
+            b.getRequestedByName(),
+            b.getReviewedById(),
+            b.getReviewedByName(),
             b.getTitle(),
             b.getPurpose(),
             b.getExpectedAttendees(),

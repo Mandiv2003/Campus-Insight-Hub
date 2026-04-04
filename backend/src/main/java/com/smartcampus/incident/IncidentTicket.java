@@ -1,83 +1,77 @@
 package com.smartcampus.incident;
 
-import com.smartcampus.resource.Resource;
-import com.smartcampus.user.User;
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
-@Entity
-@Table(name = "incident_tickets")
+@Document(collection = "incident_tickets")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class IncidentTicket {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @Builder.Default
+    private String id = UUID.randomUUID().toString();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resource_id")
-    private Resource resource;                      // nullable
+    @Field("resource_id")
+    private String resourceId;                      // nullable
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reported_by", nullable = false)
-    private User reportedBy;
+    @Field("resource_name")
+    private String resourceName;                    // nullable
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_to")
-    private User assignedTo;                        // nullable
+    @Field("reported_by_id")
+    @Indexed
+    private String reportedById;
 
-    @Column(nullable = false)
+    @Field("reported_by_name")
+    private String reportedByName;
+
+    @Field("assigned_to_id")
+    @Indexed
+    private String assignedToId;                    // nullable
+
+    @Field("assigned_to_name")
+    private String assignedToName;                  // nullable
+
     private String title;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
     private String description;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private TicketCategory category;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Builder.Default
     private TicketPriority priority = TicketPriority.MEDIUM;
 
-    @Column(name = "location_detail")
+    @Field("location_detail")
     private String locationDetail;
 
-    @Column(name = "contact_phone")
+    @Field("contact_phone")
     private String contactPhone;
 
-    @Column(name = "contact_email")
+    @Field("contact_email")
     private String contactEmail;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Builder.Default
     private TicketStatus status = TicketStatus.OPEN;
 
-    @Column(name = "resolution_notes", columnDefinition = "TEXT")
+    @Field("resolution_notes")
     private String resolutionNotes;
 
-    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    @Field("rejection_reason")
     private String rejectionReason;
 
-    @Column(name = "resolved_at")
+    @Field("resolved_at")
     private LocalDateTime resolvedAt;
 
-    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Field("created_at")
     @Builder.Default
-    private List<TicketAttachment> attachments = new ArrayList<>();
-
-    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @Builder.Default
-    private List<TicketComment> comments = new ArrayList<>();
-
-    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(name = "updated_at", nullable = false)
+    @Field("updated_at")
+    @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 }

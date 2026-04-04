@@ -3,12 +3,11 @@ package com.smartcampus.incident.dto;
 import com.smartcampus.incident.TicketComment;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 public record CommentResponseDto(
-    UUID id,
-    UUID ticketId,
-    UUID authorId,
+    String id,
+    String ticketId,
+    String authorId,
     String authorName,
     String authorAvatarUrl,
     String body,
@@ -19,10 +18,10 @@ public record CommentResponseDto(
     public static CommentResponseDto from(TicketComment c) {
         return new CommentResponseDto(
             c.getId(),
-            c.getTicket().getId(),
-            c.getAuthor().getId(),
-            c.getAuthor().getFullName(),
-            c.getAuthor().getAvatarUrl(),
+            c.getTicketId(),
+            c.getAuthorId(),
+            c.getAuthorName(),
+            c.getAuthorAvatarUrl(),
             c.getBody(),
             c.isEdited(),
             c.getCreatedAt(),

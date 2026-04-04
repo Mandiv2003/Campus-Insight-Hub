@@ -4,10 +4,9 @@ import com.smartcampus.user.Role;
 import com.smartcampus.user.User;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 public record UserDto(
-    UUID id,
+    String id,
     String email,
     String fullName,
     String avatarUrl,

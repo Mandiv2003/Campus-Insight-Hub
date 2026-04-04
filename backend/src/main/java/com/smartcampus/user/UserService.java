@@ -10,11 +10,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -23,7 +21,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Transactional
     public User registerLocalUser(String fullName, String email, String username, String rawPassword) {
         if (userRepository.findByEmail(email).isPresent()) {
             throw new ConflictException("An account with this email already exists");
@@ -57,7 +54,6 @@ public class UserService {
         return user;
     }
 
-    @Transactional
     public User upsertGoogleUser(String email, String name, String providerId, String avatarUrl) {
         return userRepository.findByProviderId(providerId)
             .map(existing -> {
@@ -92,20 +88,18 @@ public class UserService {
         return page.map(UserDto::from);
     }
 
-    public UserDto getUserById(UUID id) {
+    public UserDto getUserById(String id) {
         return UserDto.from(findOrThrow(id));
     }
 
-    @Transactional
-    public UserDto updateRole(UUID id, Role newRole) {
+    public UserDto updateRole(String id, Role newRole) {
         User user = findOrThrow(id);
         user.setRole(newRole);
         user.setUpdatedAt(LocalDateTime.now());
         return UserDto.from(userRepository.save(user));
     }
 
-    @Transactional
-    public UserDto deactivate(UUID id) {
+    public UserDto deactivate(String id) {
         User user = findOrThrow(id);
         if (!user.isActive()) throw new ForbiddenException("User is already deactivated");
         user.setActive(false);
@@ -118,7 +112,7 @@ public class UserService {
             .stream().map(UserDto::from).toList();
     }
 
-    private User findOrThrow(UUID id) {
+    private User findOrThrow(String id) {
         return userRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
     }

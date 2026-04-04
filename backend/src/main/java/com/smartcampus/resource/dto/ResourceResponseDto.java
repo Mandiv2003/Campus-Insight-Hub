@@ -6,10 +6,9 @@ import com.smartcampus.resource.ResourceType;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 public record ResourceResponseDto(
-    UUID id,
+    String id,
     String name,
     ResourceType type,
     Integer capacity,
@@ -17,7 +16,7 @@ public record ResourceResponseDto(
     String description,
     ResourceStatus status,
     String imageUrl,
-    UUID createdById,
+    String createdById,
     List<AvailabilityWindowDto> availabilityWindows,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
@@ -32,7 +31,7 @@ public record ResourceResponseDto(
             r.getDescription(),
             r.getStatus(),
             r.getImageUrl(),
-            r.getCreatedBy().getId(),
+            r.getCreatedById(),
             r.getAvailabilityWindows().stream()
                 .map(AvailabilityWindowDto::from)
                 .toList(),

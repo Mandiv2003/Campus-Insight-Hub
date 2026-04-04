@@ -28,7 +28,7 @@ public class FileStorageService {
      * @param ticketId the ticket this attachment belongs to
      * @return stored relative path: uploads/tickets/{ticketId}/{uuid}_{filename}
      */
-    public String store(MultipartFile file, UUID ticketId) {
+    public String store(MultipartFile file, String ticketId) {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("File must not be empty");
         }
@@ -45,7 +45,7 @@ public class FileStorageService {
             : "attachment";
         String storedName = UUID.randomUUID() + "_" + originalName;
 
-        Path ticketDir = Paths.get(uploadDir, "tickets", ticketId.toString());
+        Path ticketDir = Paths.get(uploadDir, "tickets", ticketId);
         try {
             Files.createDirectories(ticketDir);
             Path dest = ticketDir.resolve(storedName);

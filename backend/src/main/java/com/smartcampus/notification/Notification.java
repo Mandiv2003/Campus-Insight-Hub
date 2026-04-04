@@ -1,44 +1,43 @@
 package com.smartcampus.notification;
 
-import com.smartcampus.user.User;
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Entity
-@Table(name = "notifications")
+@Document(collection = "notifications")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Notification {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @Builder.Default
+    private String id = UUID.randomUUID().toString();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recipient_id", nullable = false)
-    private User recipient;
+    @Field("recipient_id")
+    @Indexed
+    private String recipientId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private NotificationType type;
 
-    @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false)
     private String message;
 
-    @Column(name = "entity_type")
+    @Field("entity_type")
     private String entityType;
 
-    @Column(name = "entity_id")
-    private UUID entityId;
+    @Field("entity_id")
+    private String entityId;
 
-    @Column(name = "is_read", nullable = false)
+    @Field("is_read")
+    @Builder.Default
     private boolean read = false;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Field("created_at")
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 }

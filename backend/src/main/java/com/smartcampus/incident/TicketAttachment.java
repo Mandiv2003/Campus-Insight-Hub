@@ -1,41 +1,45 @@
 package com.smartcampus.incident;
 
-import com.smartcampus.user.User;
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Entity
-@Table(name = "ticket_attachments")
+@Document(collection = "ticket_attachments")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class TicketAttachment {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @Builder.Default
+    private String id = UUID.randomUUID().toString();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ticket_id", nullable = false)
-    private IncidentTicket ticket;
+    @Field("ticket_id")
+    @Indexed
+    private String ticketId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "uploaded_by", nullable = false)
-    private User uploadedBy;
+    @Field("uploaded_by_id")
+    private String uploadedById;
 
-    @Column(name = "file_name", nullable = false)
+    @Field("uploaded_by_name")
+    private String uploadedByName;
+
+    @Field("file_name")
     private String fileName;
 
-    @Column(name = "file_path", nullable = false)
+    @Field("file_path")
     private String filePath;
 
-    @Column(name = "file_size", nullable = false)
+    @Field("file_size")
     private Long fileSize;
 
-    @Column(name = "content_type", nullable = false)
+    @Field("content_type")
     private String contentType;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Field("created_at")
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 }

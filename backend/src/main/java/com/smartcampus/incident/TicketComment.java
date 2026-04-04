@@ -1,38 +1,46 @@
 package com.smartcampus.incident;
 
-import com.smartcampus.user.User;
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Entity
-@Table(name = "ticket_comments")
+@Document(collection = "ticket_comments")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class TicketComment {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @Builder.Default
+    private String id = UUID.randomUUID().toString();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ticket_id", nullable = false)
-    private IncidentTicket ticket;
+    @Field("ticket_id")
+    @Indexed
+    private String ticketId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "author_id", nullable = false)
-    private User author;
+    @Field("author_id")
+    private String authorId;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Field("author_name")
+    private String authorName;
+
+    @Field("author_avatar_url")
+    private String authorAvatarUrl;
+
     private String body;
 
-    @Column(name = "is_edited", nullable = false)
+    @Field("is_edited")
+    @Builder.Default
     private boolean edited = false;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Field("created_at")
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(name = "updated_at", nullable = false)
+    @Field("updated_at")
+    @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 }

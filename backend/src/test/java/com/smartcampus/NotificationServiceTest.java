@@ -29,7 +29,7 @@ class NotificationServiceTest {
             .build());
 
         notificationService.notifyBookingDecision(
-            user.getId(), "Lab Booking", NotificationType.BOOKING_APPROVED, java.util.UUID.randomUUID()
+            user.getId(), "Lab Booking", NotificationType.BOOKING_APPROVED, java.util.UUID.randomUUID().toString()
         );
 
         long count = notificationRepository.countByRecipientIdAndReadFalse(user.getId());
@@ -44,7 +44,7 @@ class NotificationServiceTest {
             .build());
 
         notificationService.notifyNewComment(
-            user.getId(), user.getId(), "My Ticket", java.util.UUID.randomUUID()
+            user.getId(), user.getId(), "My Ticket", java.util.UUID.randomUUID().toString()
         );
 
         long count = notificationRepository.countByRecipientIdAndReadFalse(user.getId());

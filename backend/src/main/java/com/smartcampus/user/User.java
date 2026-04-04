@@ -1,53 +1,56 @@
 package com.smartcampus.user;
 
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Entity
-@Table(name = "users")
+@Document(collection = "users")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @Builder.Default
+    private String id = UUID.randomUUID().toString();
 
-    @Column(nullable = false, unique = true)
+    @Indexed(unique = true)
     private String email;
 
-    @Column(name = "full_name", nullable = false)
+    @Field("full_name")
     private String fullName;
 
-    @Column(name = "avatar_url")
+    @Field("avatar_url")
     private String avatarUrl;
 
-    @Column(nullable = false)
+    @Builder.Default
     private String provider = "google";
 
-    @Column(name = "provider_id", unique = true)
+    @Field("provider_id")
+    @Indexed(unique = true, sparse = true)
     private String providerId;
 
-    @Column(name = "password_hash")
+    @Field("password_hash")
     private String passwordHash;
 
-    @Column(unique = true)
+    @Indexed(unique = true, sparse = true)
     private String username;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Builder.Default
     private Role role = Role.USER;
 
-    @Column(name = "is_active", nullable = false)
+    @Field("is_active")
+    @Builder.Default
     private boolean active = true;
 
+    @Field("created_at")
     @Builder.Default
-    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Field("updated_at")
     @Builder.Default
-    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 }

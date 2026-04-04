@@ -1,14 +1,13 @@
 package com.smartcampus.incident;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
-public interface TicketCommentRepository extends JpaRepository<TicketComment, UUID> {
+public interface TicketCommentRepository extends MongoRepository<TicketComment, String> {
 
-    List<TicketComment> findByTicketIdOrderByCreatedAtAsc(UUID ticketId);
+    List<TicketComment> findByTicketIdOrderByCreatedAtAsc(String ticketId);
 
-    Optional<TicketComment> findByIdAndTicketId(UUID id, UUID ticketId);
+    Optional<TicketComment> findByIdAndTicketId(String id, String ticketId);
 }

@@ -98,7 +98,7 @@ class ResourceServiceTest {
 
     @Test
     void getByIdThrowsNotFoundForMissingResource() {
-        assertThatThrownBy(() -> resourceService.getById(UUID.randomUUID()))
+        assertThatThrownBy(() -> resourceService.getById(UUID.randomUUID().toString()))
             .isInstanceOf(com.smartcampus.common.exception.ResourceNotFoundException.class);
     }
 

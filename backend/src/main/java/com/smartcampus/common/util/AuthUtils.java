@@ -9,8 +9,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
-
 @Component
 @RequiredArgsConstructor
 public class AuthUtils {
@@ -19,7 +17,7 @@ public class AuthUtils {
 
     public User getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UUID userId = (UUID) auth.getPrincipal();
+        String userId = (String) auth.getPrincipal();
         return userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
@@ -32,7 +30,7 @@ public class AuthUtils {
         return getCurrentUser().getRole() == Role.TECHNICIAN;
     }
 
-    public boolean isOwner(UUID ownerId) {
+    public boolean isOwner(String ownerId) {
         return getCurrentUser().getId().equals(ownerId);
     }
 }

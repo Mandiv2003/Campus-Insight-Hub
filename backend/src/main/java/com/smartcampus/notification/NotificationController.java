@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/notifications")
@@ -21,47 +20,42 @@ public class NotificationController {
     private final NotificationService notificationService;
     private final AuthUtils authUtils;
 
-    // GET /api/v1/notifications?isRead=false&page=0&size=20
     @GetMapping
     public ResponseEntity<ApiResponse<PagedResponse<NotificationDto>>> list(
         @RequestParam(required = false) Boolean isRead,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "20") int size
     ) {
-        UUID userId = authUtils.getCurrentUser().getId();
+        String userId = authUtils.getCurrentUser().getId();
         PageRequest pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return ResponseEntity.ok(ApiResponse.success(
             PagedResponse.of(notificationService.getForUser(userId, isRead, pageable))
         ));
     }
 
-    // PATCH /api/v1/notifications/{id}/read
     @PatchMapping("/{id}/read")
-    public ResponseEntity<ApiResponse<NotificationDto>> markRead(@PathVariable UUID id) {
-        UUID userId = authUtils.getCurrentUser().getId();
+    public ResponseEntity<ApiResponse<NotificationDto>> markRead(@PathVariable String id) {
+        String userId = authUtils.getCurrentUser().getId();
         return ResponseEntity.ok(ApiResponse.success(notificationService.markRead(id, userId)));
     }
 
-    // PATCH /api/v1/notifications/read-all
     @PatchMapping("/read-all")
     public ResponseEntity<ApiResponse<Map<String, Integer>>> markAllRead() {
-        UUID userId = authUtils.getCurrentUser().getId();
+        String userId = authUtils.getCurrentUser().getId();
         int count = notificationService.markAllRead(userId);
         return ResponseEntity.ok(ApiResponse.success(Map.of("updated", count)));
     }
 
-    // DELETE /api/v1/notifications/{id}
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        UUID userId = authUtils.getCurrentUser().getId();
+    public ResponseEntity<Void> delete(@PathVariable String id) {
+        String userId = authUtils.getCurrentUser().getId();
         notificationService.delete(id, userId);
         return ResponseEntity.noContent().build();
     }
 
-    // GET /api/v1/notifications/unread-count
     @GetMapping("/unread-count")
     public ResponseEntity<ApiResponse<Map<String, Long>>> unreadCount() {
-        UUID userId = authUtils.getCurrentUser().getId();
+        String userId = authUtils.getCurrentUser().getId();
         return ResponseEntity.ok(ApiResponse.success(
             Map.of("count", notificationService.countUnread(userId))
         ));

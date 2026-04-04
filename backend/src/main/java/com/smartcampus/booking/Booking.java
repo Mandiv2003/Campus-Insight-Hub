@@ -1,65 +1,72 @@
 package com.smartcampus.booking;
 
-import com.smartcampus.resource.Resource;
-import com.smartcampus.user.User;
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Entity
-@Table(name = "bookings")
+@Document(collection = "bookings")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Booking {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @Builder.Default
+    private String id = UUID.randomUUID().toString();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resource_id", nullable = false)
-    private Resource resource;
+    @Field("resource_id")
+    @Indexed
+    private String resourceId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "requested_by", nullable = false)
-    private User requestedBy;
+    @Field("resource_name")
+    private String resourceName;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reviewed_by")
-    private User reviewedBy;
+    @Field("requested_by_id")
+    @Indexed
+    private String requestedById;
 
-    @Column(nullable = false)
+    @Field("requested_by_name")
+    private String requestedByName;
+
+    @Field("reviewed_by_id")
+    private String reviewedById;
+
+    @Field("reviewed_by_name")
+    private String reviewedByName;
+
     private String title;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
     private String purpose;
 
-    @Column(name = "expected_attendees")
+    @Field("expected_attendees")
     private Integer expectedAttendees;
 
-    @Column(name = "start_datetime", nullable = false)
+    @Field("start_datetime")
     private LocalDateTime startDatetime;
 
-    @Column(name = "end_datetime", nullable = false)
+    @Field("end_datetime")
     private LocalDateTime endDatetime;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Builder.Default
     private BookingStatus status = BookingStatus.PENDING;
 
-    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    @Field("rejection_reason")
     private String rejectionReason;
 
-    @Column(name = "cancellation_note", columnDefinition = "TEXT")
+    @Field("cancellation_note")
     private String cancellationNote;
 
-    @Column(name = "reviewed_at")
+    @Field("reviewed_at")
     private LocalDateTime reviewedAt;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Field("created_at")
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(name = "updated_at", nullable = false)
+    @Field("updated_at")
+    @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 }
