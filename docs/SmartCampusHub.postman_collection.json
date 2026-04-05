@@ -1,0 +1,1080 @@
+{
+  "info": {
+    "name": "Smart Campus Operations Hub",
+    "description": "Complete API collection for Smart Campus Operations Hub — IT3030 PAF 2026 (SLIIT). \n\nSetup:\n1. Set the `baseUrl` variable to `http://localhost:8080`\n2. Register or login to get a token\n3. The `token` variable is set automatically by the login/register tests\n4. All authenticated requests use `{{token}}` in the Authorization header",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "resourceId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "bookingId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "ticketId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "commentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "notificationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "technicianId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data.token) {",
+                  "    pm.collectionVariables.set('token', json.data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"username\": \"johndoe\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "register"]
+            },
+            "description": "Register a new local user. Returns JWT token and user details.\n\nAuto-saves token to `{{token}}` variable."
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data.token) {",
+                  "    pm.collectionVariables.set('token', json.data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"john.doe@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Login with email OR username + password. Returns JWT token.\n\n`identifier` accepts either email address or username.\n\nAuto-saves token to `{{token}}` variable."
+          }
+        },
+        {
+          "name": "Get Current User (me)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "me"]
+            },
+            "description": "Returns the currently authenticated user's profile."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            },
+            "description": "Stateless logout — JWT is discarded on the client side. Returns 204."
+          }
+        },
+        {
+          "name": "Google OAuth2 (browser only)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/oauth2/authorization/google",
+              "host": ["{{baseUrl}}"],
+              "path": ["oauth2", "authorization", "google"]
+            },
+            "description": "Initiates Google OAuth2 flow. Must be opened in a browser (not Postman). Redirects to Google login, then back to frontend at http://localhost:5173/oauth-callback?token=<jwt>"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Resources (M1)",
+      "item": [
+        {
+          "name": "List Resources",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/resources?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "resources"],
+              "query": [
+                { "key": "type", "value": "LAB", "description": "Filter by type: LAB | LECTURE_HALL | MEETING_ROOM | EQUIPMENT | OTHER", "disabled": true },
+                { "key": "location", "value": "Block A", "description": "Filter by location (partial match)", "disabled": true },
+                { "key": "minCapacity", "value": "20", "description": "Filter by minimum capacity", "disabled": true },
+                { "key": "status", "value": "ACTIVE", "description": "Filter by status: ACTIVE | MAINTENANCE | ARCHIVED", "disabled": true },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            },
+            "description": "Public endpoint — no auth required. Lists all non-archived resources with optional filters."
+          }
+        },
+        {
+          "name": "Get Resource by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/resources/{{resourceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "resources", "{{resourceId}}"]
+            },
+            "description": "Public endpoint — no auth required."
+          }
+        },
+        {
+          "name": "Create Resource (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "    pm.collectionVariables.set('resourceId', json.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Computer Lab 101\",\n  \"type\": \"LAB\",\n  \"capacity\": 40,\n  \"location\": \"Block A, Floor 1\",\n  \"description\": \"Main computer lab with 40 workstations\",\n  \"imageUrl\": null,\n  \"availabilityWindows\": [\n    {\n      \"id\": null,\n      \"dayOfWeek\": \"MONDAY\",\n      \"openTime\": \"08:00:00\",\n      \"closeTime\": \"17:00:00\"\n    },\n    {\n      \"id\": null,\n      \"dayOfWeek\": \"TUESDAY\",\n      \"openTime\": \"08:00:00\",\n      \"closeTime\": \"17:00:00\"\n    },\n    {\n      \"id\": null,\n      \"dayOfWeek\": \"WEDNESDAY\",\n      \"openTime\": \"08:00:00\",\n      \"closeTime\": \"17:00:00\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/resources",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "resources"]
+            },
+            "description": "ADMIN only. Creates a new resource. `type` values: LAB | LECTURE_HALL | MEETING_ROOM | EQUIPMENT | OTHER\n\nAuto-saves `resourceId` variable."
+          }
+        },
+        {
+          "name": "Update Resource (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Computer Lab 101 (Updated)\",\n  \"type\": \"LAB\",\n  \"capacity\": 45,\n  \"location\": \"Block A, Floor 1\",\n  \"description\": \"Updated description\",\n  \"imageUrl\": null,\n  \"availabilityWindows\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/resources/{{resourceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "resources", "{{resourceId}}"]
+            },
+            "description": "ADMIN only. Full update of a resource."
+          }
+        },
+        {
+          "name": "Update Resource Status (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"MAINTENANCE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/resources/{{resourceId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "resources", "{{resourceId}}", "status"]
+            },
+            "description": "ADMIN only. `status` values: ACTIVE | MAINTENANCE | ARCHIVED"
+          }
+        },
+        {
+          "name": "Delete Resource (Admin — soft delete)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/resources/{{resourceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "resources", "{{resourceId}}"]
+            },
+            "description": "ADMIN only. Sets resource status to ARCHIVED (soft delete). Returns 204."
+          }
+        },
+        {
+          "name": "Add Availability Window (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": null,\n  \"dayOfWeek\": \"FRIDAY\",\n  \"openTime\": \"09:00:00\",\n  \"closeTime\": \"13:00:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/resources/{{resourceId}}/availability",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "resources", "{{resourceId}}", "availability"]
+            },
+            "description": "ADMIN only. Adds a single availability window to a resource. `dayOfWeek` values: MONDAY | TUESDAY | WEDNESDAY | THURSDAY | FRIDAY | SATURDAY | SUNDAY"
+          }
+        },
+        {
+          "name": "Delete Availability Window (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/resources/{{resourceId}}/availability/:windowId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "resources", "{{resourceId}}", "availability", ":windowId"],
+              "variable": [
+                { "key": "windowId", "value": "replace-with-window-id" }
+              ]
+            },
+            "description": "ADMIN only. Removes a specific availability window from a resource."
+          }
+        },
+        {
+          "name": "Get Resource Availability",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/resources/{{resourceId}}/bookings/availability?date=2026-05-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "resources", "{{resourceId}}", "bookings", "availability"],
+              "query": [
+                { "key": "date", "value": "2026-05-01", "description": "Date in YYYY-MM-DD format" }
+              ]
+            },
+            "description": "Returns available time slots for a resource on a given date, excluding already-booked windows."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings (M2)",
+      "item": [
+        {
+          "name": "Create Booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "    pm.collectionVariables.set('bookingId', json.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceId\": \"{{resourceId}}\",\n  \"title\": \"Team Meeting\",\n  \"purpose\": \"Weekly project sync\",\n  \"startDatetime\": \"2026-05-10T09:00:00\",\n  \"endDatetime\": \"2026-05-10T11:00:00\",\n  \"expectedAttendees\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bookings"]
+            },
+            "description": "Creates a new booking request. Status starts as PENDING. Conflict detection runs automatically against APPROVED bookings.\n\nAuto-saves `bookingId` variable."
+          }
+        },
+        {
+          "name": "Get My Bookings",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookings/my?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bookings", "my"],
+              "query": [
+                { "key": "status", "value": "PENDING", "description": "Filter: PENDING | APPROVED | REJECTED | CANCELLED", "disabled": true },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Booking by ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookings/{{bookingId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bookings", "{{bookingId}}"]
+            },
+            "description": "Users can only view their own bookings. Admins can view any."
+          }
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rejectionReason\": \"No longer needed\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bookings/{{bookingId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bookings", "{{bookingId}}", "cancel"]
+            },
+            "description": "Cancels a booking at any status. Body is optional."
+          }
+        },
+        {
+          "name": "List All Bookings (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/bookings?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "bookings"],
+              "query": [
+                { "key": "resourceId", "value": "{{resourceId}}", "description": "Filter by resource", "disabled": true },
+                { "key": "status", "value": "PENDING", "description": "PENDING | APPROVED | REJECTED | CANCELLED", "disabled": true },
+                { "key": "from", "value": "2026-05-01T00:00:00", "description": "ISO datetime range start", "disabled": true },
+                { "key": "to", "value": "2026-05-31T23:59:59", "description": "ISO datetime range end", "disabled": true },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            },
+            "description": "ADMIN only."
+          }
+        },
+        {
+          "name": "Approve Booking (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/bookings/{{bookingId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "bookings", "{{bookingId}}", "approve"]
+            },
+            "description": "ADMIN only. Transitions booking from PENDING → APPROVED. Sends notification to requester."
+          }
+        },
+        {
+          "name": "Reject Booking (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rejectionReason\": \"Resource is unavailable during the requested time\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/bookings/{{bookingId}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "bookings", "{{bookingId}}", "reject"]
+            },
+            "description": "ADMIN only. `rejectionReason` is required."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Incident Tickets (M3)",
+      "item": [
+        {
+          "name": "Create Ticket",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "    pm.collectionVariables.set('ticketId', json.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceId\": null,\n  \"title\": \"Projector not working in Lab 101\",\n  \"description\": \"The projector in Lab 101 has been showing no signal since this morning. Students cannot view presentations.\",\n  \"category\": \"ELECTRICAL\",\n  \"priority\": \"HIGH\",\n  \"locationDetail\": \"Block A, Lab 101\",\n  \"contactPhone\": \"+94771234567\",\n  \"contactEmail\": \"reporter@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tickets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tickets"]
+            },
+            "description": "Creates a new incident ticket. Status starts as OPEN.\n\n`category` values: ELECTRICAL | PLUMBING | HVAC | EQUIPMENT | NETWORK | SECURITY | CLEANING | OTHER\n`priority` values: LOW | MEDIUM | HIGH | CRITICAL\n\nAuto-saves `ticketId` variable."
+          }
+        },
+        {
+          "name": "Get My Tickets",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tickets/my?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tickets", "my"],
+              "query": [
+                { "key": "status", "value": "OPEN", "description": "OPEN | IN_PROGRESS | RESOLVED | CLOSED | REJECTED", "disabled": true },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Ticket by ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tickets/{{ticketId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tickets", "{{ticketId}}"]
+            },
+            "description": "Returns full ticket with attachments and comments. Users can only view their own tickets; admins and technicians can view any."
+          }
+        },
+        {
+          "name": "Update Ticket (while OPEN)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceId\": null,\n  \"title\": \"Projector not working in Lab 101 (Updated)\",\n  \"description\": \"Updated description with more details.\",\n  \"category\": \"ELECTRICAL\",\n  \"priority\": \"CRITICAL\",\n  \"locationDetail\": \"Block A, Lab 101\",\n  \"contactPhone\": \"+94771234567\",\n  \"contactEmail\": \"reporter@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tickets/{{ticketId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tickets", "{{ticketId}}"]
+            },
+            "description": "Only allowed while ticket status is OPEN. Reporter can only edit their own ticket."
+          }
+        },
+        {
+          "name": "Delete Ticket",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tickets/{{ticketId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tickets", "{{ticketId}}"]
+            },
+            "description": "Reporter can delete their own ticket; admin can delete any."
+          }
+        },
+        {
+          "name": "List All Tickets (Admin + Technician)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/tickets?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "tickets"],
+              "query": [
+                { "key": "status", "value": "OPEN", "description": "OPEN | IN_PROGRESS | RESOLVED | CLOSED | REJECTED", "disabled": true },
+                { "key": "priority", "value": "HIGH", "description": "LOW | MEDIUM | HIGH | CRITICAL", "disabled": true },
+                { "key": "category", "value": "ELECTRICAL", "description": "ELECTRICAL | PLUMBING | HVAC | EQUIPMENT | NETWORK | SECURITY | CLEANING | OTHER", "disabled": true },
+                { "key": "assignedTo", "value": "{{technicianId}}", "description": "Filter by assigned technician ID", "disabled": true },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            },
+            "description": "ADMIN and TECHNICIAN roles."
+          }
+        },
+        {
+          "name": "Update Ticket Status (Admin + Technician)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_PROGRESS\",\n  \"resolutionNotes\": null,\n  \"rejectionReason\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/tickets/{{ticketId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "tickets", "{{ticketId}}", "status"]
+            },
+            "description": "ADMIN and TECHNICIAN roles.\n\nTransitions:\n- Any → IN_PROGRESS\n- IN_PROGRESS → RESOLVED (requires `resolutionNotes`)\n- Any → REJECTED (requires `rejectionReason`)\n- RESOLVED → CLOSED\n\nSends notification to ticket reporter."
+          }
+        },
+        {
+          "name": "Update Ticket Status — Resolve (Admin + Technician)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"RESOLVED\",\n  \"resolutionNotes\": \"Replaced the projector bulb. Unit is now fully operational.\",\n  \"rejectionReason\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/tickets/{{ticketId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "tickets", "{{ticketId}}", "status"]
+            },
+            "description": "`resolutionNotes` is required when status = RESOLVED."
+          }
+        },
+        {
+          "name": "Assign Technician (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"technicianId\": \"{{technicianId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/tickets/{{ticketId}}/assign",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "tickets", "{{ticketId}}", "assign"]
+            },
+            "description": "ADMIN only. Assigns a technician and auto-transitions OPEN → IN_PROGRESS. Sends notification to assigned technician."
+          }
+        },
+        {
+          "name": "Upload Attachment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "JPEG or PNG only, max 5MB"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tickets/{{ticketId}}/attachments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tickets", "{{ticketId}}", "attachments"]
+            },
+            "description": "Upload an image attachment to a ticket. Max 3 attachments per ticket. JPEG/PNG only, max 5MB.\n\nFile is stored at: `uploads/tickets/{ticketId}/{uuid}_{filename}`"
+          }
+        },
+        {
+          "name": "Delete Attachment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tickets/{{ticketId}}/attachments/:attachmentId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tickets", "{{ticketId}}", "attachments", ":attachmentId"],
+              "variable": [
+                { "key": "attachmentId", "value": "replace-with-attachment-id" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Serve Attachment File",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/files/{{ticketId}}/:filename",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "files", "{{ticketId}}", ":filename"],
+              "variable": [
+                { "key": "filename", "value": "replace-with-filename" }
+              ]
+            },
+            "description": "Serves an uploaded attachment image directly from disk. Returns inline image."
+          }
+        },
+        {
+          "name": "Add Comment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "    pm.collectionVariables.set('commentId', json.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"We have ordered the replacement part. Expected arrival in 2 days.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tickets/{{ticketId}}/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tickets", "{{ticketId}}", "comments"]
+            },
+            "description": "Adds a comment to a ticket. Sends a notification to the ticket reporter (unless the commenter IS the reporter).\n\nAuto-saves `commentId` variable."
+          }
+        },
+        {
+          "name": "Edit Comment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Updated: Part has arrived and repair is scheduled for tomorrow.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tickets/{{ticketId}}/comments/{{commentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tickets", "{{ticketId}}", "comments", "{{commentId}}"]
+            },
+            "description": "Only the comment author can edit their own comment."
+          }
+        },
+        {
+          "name": "Delete Comment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tickets/{{ticketId}}/comments/{{commentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tickets", "{{ticketId}}", "comments", "{{commentId}}"]
+            },
+            "description": "Comment author or admin can delete a comment."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications (M4)",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications"],
+              "query": [
+                { "key": "isRead", "value": "false", "description": "Filter: true = read only, false = unread only, omit = all", "disabled": true },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            },
+            "description": "Returns paginated notifications for the current user, newest first."
+          }
+        },
+        {
+          "name": "Get Unread Count",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/unread-count",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "unread-count"]
+            },
+            "description": "Returns `{ \"count\": N }` — useful for badge display."
+          }
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/{{notificationId}}/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "{{notificationId}}", "read"]
+            }
+          }
+        },
+        {
+          "name": "Mark All Notifications as Read",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/read-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "read-all"]
+            },
+            "description": "Marks all of the current user's notifications as read. Returns `{ \"updated\": N }`."
+          }
+        },
+        {
+          "name": "Delete Notification",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/{{notificationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "{{notificationId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users (M4 — Admin)",
+      "item": [
+        {
+          "name": "List All Users (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/users?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "users"],
+              "query": [
+                { "key": "role", "value": "USER", "description": "Filter: USER | ADMIN | TECHNICIAN", "disabled": true },
+                { "key": "isActive", "value": "true", "description": "Filter by active status", "disabled": true },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            },
+            "description": "ADMIN only."
+          }
+        },
+        {
+          "name": "Get User by ID (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "users", "{{userId}}"]
+            },
+            "description": "ADMIN only."
+          }
+        },
+        {
+          "name": "Update User Role (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"TECHNICIAN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/users/{{userId}}/role",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "users", "{{userId}}", "role"]
+            },
+            "description": "ADMIN only. `role` values: USER | ADMIN | TECHNICIAN"
+          }
+        },
+        {
+          "name": "Deactivate User (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/users/{{userId}}/deactivate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "users", "{{userId}}", "deactivate"]
+            },
+            "description": "ADMIN only. Sets user `isActive = false`."
+          }
+        },
+        {
+          "name": "Get All Technicians",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/technicians",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "technicians"]
+            },
+            "description": "Returns all users with TECHNICIAN role. Used for the assign-technician dropdown."
+          }
+        },
+        {
+          "name": "Admin Stats",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "stats"]
+            },
+            "description": "ADMIN only. Stub endpoint — returns placeholder message."
+          }
+        }
+      ]
+    }
+  ]
+}

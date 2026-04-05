@@ -1,10 +1,16 @@
 package com.smartcampus;
 
-import com.smartcampus.resource.*;
-import com.smartcampus.resource.dto.*;
-import com.smartcampus.user.Role;
-import com.smartcampus.user.User;
-import com.smartcampus.user.UserRepository;
+import com.smartcampus.dto.resource.AvailabilityWindowDto;
+import com.smartcampus.dto.resource.ResourceRequestDto;
+import com.smartcampus.dto.resource.ResourceResponseDto;
+import com.smartcampus.model.Resource;
+import com.smartcampus.model.User;
+import com.smartcampus.model.enums.ResourceStatus;
+import com.smartcampus.model.enums.ResourceType;
+import com.smartcampus.model.enums.Role;
+import com.smartcampus.repository.ResourceRepository;
+import com.smartcampus.repository.UserRepository;
+import com.smartcampus.service.ResourceService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -99,7 +105,7 @@ class ResourceServiceTest {
     @Test
     void getByIdThrowsNotFoundForMissingResource() {
         assertThatThrownBy(() -> resourceService.getById(UUID.randomUUID().toString()))
-            .isInstanceOf(com.smartcampus.common.exception.ResourceNotFoundException.class);
+            .isInstanceOf(com.smartcampus.exception.ResourceNotFoundException.class);
     }
 
     @Test
