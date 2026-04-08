@@ -1,4 +1,4 @@
-import { Chip } from '@mui/material'
+import { STATUS_BADGE } from '../../theme/tokens'
 import type { ResourceStatus } from '../../types/resource'
 
 interface Props {
@@ -6,14 +6,23 @@ interface Props {
   size?: 'small' | 'medium'
 }
 
-const STATUS_CONFIG: Record<ResourceStatus, { label: string; color: 'success' | 'warning' | 'error' | 'default' }> = {
-  ACTIVE:         { label: 'Active',         color: 'success' },
-  OUT_OF_SERVICE: { label: 'Out of Service', color: 'error'   },
-  MAINTENANCE:    { label: 'Maintenance',    color: 'warning' },
-  ARCHIVED:       { label: 'Archived',       color: 'default' },
-}
-
-export default function AvailabilityBadge({ status, size = 'small' }: Props) {
-  const { label, color } = STATUS_CONFIG[status]
-  return <Chip label={label} color={color} size={size} />
+export default function AvailabilityBadge({ status, size = 'medium' }: Props) {
+  if (!status) return null
+  const token = STATUS_BADGE[status] ?? { color: '#6b7280', bg: 'rgba(107,114,128,0.10)' }
+  return (
+    <span style={{
+      display: 'inline-block',
+      padding: size === 'small' ? '1px 8px' : '2px 10px',
+      borderRadius: 9999,
+      fontSize: size === 'small' ? 10 : 11,
+      fontWeight: 600,
+      letterSpacing: '0.05em',
+      textTransform: 'uppercase',
+      color: token.color,
+      background: token.bg,
+      whiteSpace: 'nowrap',
+    }}>
+      {status.replace(/_/g, '\u00A0')}
+    </span>
+  )
 }

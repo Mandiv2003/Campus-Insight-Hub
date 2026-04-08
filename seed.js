@@ -159,8 +159,11 @@ const R_CONF_A    = "b1c2d3e4-0003-0003-0003-000000000003";
 const R_PROJECTOR = "b1c2d3e4-0004-0004-0004-000000000004";
 const R_LAB7      = "b1c2d3e4-0005-0005-0005-000000000005";
 const R_SEMINAR   = "b1c2d3e4-0006-0006-0006-000000000006";
-const R_MINIBUS   = "b1c2d3e4-0007-0007-0007-000000000007";
-const R_STUDIO    = "b1c2d3e4-0008-0008-0008-000000000008";
+const R_MINIBUS      = "b1c2d3e4-0007-0007-0007-000000000007";
+const R_STUDIO       = "b1c2d3e4-0008-0008-0008-000000000008";
+const R_PHYSICS_LAB  = "b1c2d3e4-0009-0009-0009-000000000009";
+const R_MEETING_B    = "b1c2d3e4-0010-0010-0010-000000000010";
+const R_COWORK       = "b1c2d3e4-0011-0011-0011-000000000011";
 
 function makeWindow(id, day, startH, endH) {
   return {
@@ -203,7 +206,7 @@ db.resources.insertMany([
     location: "Block A, Level 4",
     description: "Large air-conditioned lecture hall equipped with a 4K projector, wireless microphone system, and tiered seating. Suitable for full-batch lectures and presentations.",
     status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800",
+    image_url: "/images/stitch/resource-auditorium.jpg",
     created_by_id: U_ADMIN,
     availability_windows: weekdayWindows("lh401"),
     created_at: new Date("2025-08-10T08:00:00.000Z"),
@@ -217,7 +220,7 @@ db.resources.insertMany([
     location: "Block B, Level 2",
     description: "40-seat computer laboratory with Intel Core i7 workstations, 32 GB RAM each. Installed with Visual Studio Code, IntelliJ IDEA, Eclipse, MATLAB, and SPSS. High-speed fibre connection.",
     status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1606761568499-6d2451b23c66?w=800",
+    image_url: "/images/stitch/resource-computer-lab.jpg",
     created_by_id: U_ADMIN,
     availability_windows: extendedWeekdayWindows("lab3"),
     created_at: new Date("2025-08-10T08:30:00.000Z"),
@@ -231,7 +234,7 @@ db.resources.insertMany([
     location: "Block C, Level 1",
     description: "Executive conference room with a 75-inch smart display, video conferencing kit (Logitech Rally Plus), and whiteboard walls. Ideal for viva examinations, panel interviews, and project reviews.",
     status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=800",
+    image_url: "/images/stitch/resource-boardroom.jpg",
     created_by_id: U_ADMIN,
     availability_windows: weekdayWindows("confa"),
     created_at: new Date("2025-08-11T09:00:00.000Z"),
@@ -245,7 +248,7 @@ db.resources.insertMany([
     location: "Equipment Store, Block A Ground Floor",
     description: "Epson EB-2250U WUXGA laser projector with 5000 lumens brightness. Includes HDMI cable, VGA adapter, remote, and carry case. Suitable for outdoor or auxiliary room presentations.",
     status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=800",
+    image_url: "/images/stitch/resource-projector.jpg",
     created_by_id: U_ADMIN,
     availability_windows: weekdayWindows("proj07"),
     created_at: new Date("2025-08-11T09:30:00.000Z"),
@@ -259,7 +262,7 @@ db.resources.insertMany([
     location: "Block D, Level 3",
     description: "Dedicated networking and cybersecurity lab with Cisco switches, routers, and firewalls. Includes 30 workstations preloaded with Kali Linux, Wireshark, and Packet Tracer. Isolated VLAN environment.",
     status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800",
+    image_url: "/images/stitch/resource-lab-2.jpg",
     created_by_id: U_ADMIN,
     availability_windows: extendedWeekdayWindows("lab7"),
     created_at: new Date("2025-08-12T08:00:00.000Z"),
@@ -273,7 +276,7 @@ db.resources.insertMany([
     location: "Block E, Level 2",
     description: "Flexible seminar room with movable furniture, dual projectors, and surround sound. Frequently used for guest lectures, workshops, and hackathon briefings.",
     status: "MAINTENANCE",
-    image_url: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800",
+    image_url: "/images/stitch/resource-seminar.jpg",
     created_by_id: U_ADMIN,
     availability_windows: weekdayWindows("seminar02"),
     created_at: new Date("2025-08-12T09:00:00.000Z"),
@@ -287,7 +290,7 @@ db.resources.insertMany([
     location: "Vehicle Bay, Main Gate",
     description: "15-seat air-conditioned Toyota Coaster. Available for official field trips, industrial visits, and approved extracurricular transport. Requires minimum 3 days advance booking.",
     status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800",
+    image_url: null,
     created_by_id: U_ADMIN,
     availability_windows: [
       makeWindow("minibus-mon", "MONDAY",    8, 17),
@@ -305,7 +308,7 @@ db.resources.insertMany([
     location: "Block F, Level 1",
     description: "Professional media studio with a green screen, ring lights, DSLR cameras, audio recording booth, and Adobe Creative Cloud workstations. Used by multimedia and IT students for project recordings and e-portfolio production.",
     status: "ACTIVE",
-    image_url: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800",
+    image_url: null,
     created_by_id: U_ADMIN,
     availability_windows: [
       makeWindow("studio-mon", "MONDAY",    9, 18),
@@ -317,6 +320,56 @@ db.resources.insertMany([
     ],
     created_at: new Date("2025-08-14T08:00:00.000Z"),
     updated_at: new Date("2025-08-14T08:00:00.000Z")
+  },
+  {
+    _id: R_PHYSICS_LAB,
+    name: "Physics & Electronics Lab",
+    type: "LAB",
+    capacity: 24,
+    location: "Block G, Level 2",
+    description: "Advanced electronics and physics laboratory equipped with oscilloscopes, function generators, power supplies, and soldering stations. Used for EE and IoT practical sessions. Includes a dedicated microcontroller workbench with Arduino and Raspberry Pi kits.",
+    status: "ACTIVE",
+    image_url: "/images/stitch/resource-physics-lab.jpg",
+    created_by_id: U_ADMIN,
+    availability_windows: weekdayWindows("physlab"),
+    created_at: new Date("2025-08-15T08:00:00.000Z"),
+    updated_at: new Date("2025-08-15T08:00:00.000Z")
+  },
+  {
+    _id: R_MEETING_B,
+    name: "Meeting Room B",
+    type: "MEETING_ROOM",
+    capacity: 12,
+    location: "Block C, Level 2",
+    description: "Mid-sized meeting room with a 55-inch display, HDMI connectivity, and a round table seating 12. Ideal for smaller team reviews, module coordinator meetings, and student consultations with lecturers.",
+    status: "ACTIVE",
+    image_url: "/images/stitch/resource-meeting-room.jpg",
+    created_by_id: U_ADMIN,
+    availability_windows: weekdayWindows("meetb"),
+    created_at: new Date("2025-08-15T09:00:00.000Z"),
+    updated_at: new Date("2025-08-15T09:00:00.000Z")
+  },
+  {
+    _id: R_COWORK,
+    name: "Collaborative Study Lounge",
+    type: "MEETING_ROOM",
+    capacity: 35,
+    location: "Block E, Ground Floor",
+    description: "Open-plan collaborative study space with modular furniture, whiteboards, and high-speed Wi-Fi. Bookable for group study sessions, hackathon prep, and project sprints. Includes a kitchenette and lockers for day use.",
+    status: "ACTIVE",
+    image_url: "/images/stitch/resource-cowork.jpg",
+    created_by_id: U_ADMIN,
+    availability_windows: [
+      makeWindow("cowork-mon", "MONDAY",    8, 21),
+      makeWindow("cowork-tue", "TUESDAY",   8, 21),
+      makeWindow("cowork-wed", "WEDNESDAY", 8, 21),
+      makeWindow("cowork-thu", "THURSDAY",  8, 21),
+      makeWindow("cowork-fri", "FRIDAY",    8, 21),
+      makeWindow("cowork-sat", "SATURDAY",  9, 18),
+      makeWindow("cowork-sun", "SUNDAY",    10, 16)
+    ],
+    created_at: new Date("2025-08-16T08:00:00.000Z"),
+    updated_at: new Date("2025-08-16T08:00:00.000Z")
   }
 ]);
 print("Inserted " + db.resources.countDocuments() + " resources.");
@@ -552,6 +605,7 @@ const T5 = "d1e2f3a4-0005-0005-0005-000000000005";
 const T6 = "d1e2f3a4-0006-0006-0006-000000000006";
 const T7 = "d1e2f3a4-0007-0007-0007-000000000007";
 const T8 = "d1e2f3a4-0008-0008-0008-000000000008";
+const T9 = "d1e2f3a4-0009-0009-0009-000000000009";
 
 db.incident_tickets.insertMany([
   {
@@ -564,7 +618,7 @@ db.incident_tickets.insertMany([
     assigned_to_name: "Kasun Bandara",
     title: "5 workstations in Computer Lab 3 fail to boot — BIOS error on POST",
     description: "Workstations number 12, 17, 18, 23, and 31 are displaying a BIOS POST failure screen (error code 0x0000007B) on startup. They were functioning normally yesterday afternoon. The remaining 35 machines are operational. This is causing disruption to the Database Systems practical sessions scheduled this week.",
-    category: "IT",
+    category: "IT_EQUIPMENT",
     priority: "HIGH",
     location_detail: "Computer Lab 3, Block B Level 2 — workstations along the east wall row 3 and row 4",
     contact_phone: "0771234567",
@@ -652,7 +706,7 @@ db.incident_tickets.insertMany([
     assigned_to_name: "Dilani Silva",
     title: "Core Cisco switch in Networking Lab 7 shows amber port status on uplinks",
     description: "The core Cisco Catalyst 2960 switch (hostname: SW-LAB7-CORE) located in the server rack in Networking Lab 7 is showing amber port status lights on all four uplink ports (GigabitEthernet0/25 to 0/28). This is causing intermittent network drops for all 30 workstations in the lab. Affected since this morning approximately 06:30. Verified using show interface status command — ports are showing err-disabled state.",
-    category: "IT",
+    category: "IT_EQUIPMENT",
     priority: "HIGH",
     location_detail: "Networking Lab 7, Block D Level 3 — server rack, Cisco Catalyst 2960 (rack position 3U)",
     contact_phone: "0771234567",
@@ -674,7 +728,7 @@ db.incident_tickets.insertMany([
     assigned_to_name: null,
     title: "Cracked floor tile creating trip hazard — Block B ground floor near lift",
     description: "There is a severely cracked and partially lifted floor tile near the lift entrance on the ground floor of Block B. The raised edge of the tile is approximately 2 cm high and is a significant trip hazard. Two students have already reported nearly tripping on it. The area is high-traffic between 08:00 and 10:00 daily. Immediate temporary barrier and permanent replacement required.",
-    category: "STRUCTURAL",
+    category: "SAFETY",
     priority: "HIGH",
     location_detail: "Block B ground floor, approximately 1.5 m from lift entrance doors",
     contact_phone: "0712345678",
@@ -696,7 +750,7 @@ db.incident_tickets.insertMany([
     assigned_to_name: "Kasun Bandara",
     title: "Studio audio interface not recognised by workstation — recording blocked",
     description: "The Focusrite Scarlett 18i20 audio interface in the Media Production Studio is not being detected by any of the three Adobe Audition workstations. Device Manager shows 'Unknown USB Device (Device Descriptor Request Failed)'. The interface powers on (green LED) but USB handshake fails. This is blocking all audio recording projects including several final year submissions due this week.",
-    category: "IT",
+    category: "IT_EQUIPMENT",
     priority: "CRITICAL",
     location_detail: "Media Production Studio, Block F Level 1 — audio recording booth workstation rack",
     contact_phone: "0756789012",
@@ -729,6 +783,28 @@ db.incident_tickets.insertMany([
     resolved_at: new Date("2026-03-30T15:00:00.000Z"),
     created_at: new Date("2026-03-28T08:00:00.000Z"),
     updated_at: new Date("2026-03-30T15:00:00.000Z")
+  },
+  {
+    _id: T9,
+    resource_id: null,
+    resource_name: null,
+    reported_by_id: U_SACHINI,
+    reported_by_name: "Sachini Jayawardena",
+    assigned_to_id: U_TECH_KASUN,
+    assigned_to_name: "Kasun Bandara",
+    title: "Burnt and damaged electrical outlet in Block D Level 1 corridor",
+    description: "A double electrical outlet on the wall of the Block D Level 1 corridor (near the water dispenser) is visibly burnt and damaged. The faceplate is charred black and one of the sockets has melted plastic around the earth pin. A second adjacent outlet is cracked with exposed wiring visible at the bottom. Both outlets should be isolated and replaced immediately as they pose a fire and electrocution hazard.",
+    category: "ELECTRICAL",
+    priority: "CRITICAL",
+    location_detail: "Block D Level 1 corridor, wall adjacent to the water dispenser — two double-gang sockets, positions W-D1-04 and W-D1-05",
+    contact_phone: "0779876543",
+    contact_email: "sachini.jayawardena@students.sliit.lk",
+    status: "IN_PROGRESS",
+    resolution_notes: null,
+    rejection_reason: null,
+    resolved_at: null,
+    created_at: new Date("2026-04-06T07:30:00.000Z"),
+    updated_at: new Date("2026-04-06T09:15:00.000Z")
   }
 ]);
 print("Inserted " + db.incident_tickets.countDocuments() + " incident tickets.");
@@ -880,6 +956,50 @@ db.ticket_attachments.insertMany([
     file_size: 543210,
     content_type: "image/png",
     created_at: new Date("2026-04-01T11:10:00.000Z")
+  },
+  {
+    _id: "f1a2b3c4-0007-0007-0007-000000000007",
+    ticket_id: T3,
+    uploaded_by_id: U_ASHAN,
+    uploaded_by_name: "Ashan Rodrigo",
+    file_name: "incident-ac-unit.jpg",
+    file_path: "uploads/tickets/" + T3 + "/incident-ac-unit.jpg",
+    file_size: 1923410,
+    content_type: "image/jpeg",
+    created_at: new Date("2026-04-02T13:10:00.000Z")
+  },
+  {
+    _id: "f1a2b3c4-0008-0008-0008-000000000008",
+    ticket_id: T6,
+    uploaded_by_id: U_ASHAN,
+    uploaded_by_name: "Ashan Rodrigo",
+    file_name: "incident-floor-plan.jpg",
+    file_path: "uploads/tickets/" + T6 + "/incident-floor-plan.jpg",
+    file_size: 876540,
+    content_type: "image/jpeg",
+    created_at: new Date("2026-04-05T07:05:00.000Z")
+  },
+  {
+    _id: "f1a2b3c4-0009-0009-0009-000000000009",
+    ticket_id: T9,
+    uploaded_by_id: U_SACHINI,
+    uploaded_by_name: "Sachini Jayawardena",
+    file_name: "incident-charred-outlet.jpg",
+    file_path: "uploads/tickets/" + T9 + "/incident-charred-outlet.jpg",
+    file_size: 2145670,
+    content_type: "image/jpeg",
+    created_at: new Date("2026-04-06T07:33:00.000Z")
+  },
+  {
+    _id: "f1a2b3c4-0010-0010-0010-000000000010",
+    ticket_id: T9,
+    uploaded_by_id: U_SACHINI,
+    uploaded_by_name: "Sachini Jayawardena",
+    file_name: "incident-damaged-outlet.jpg",
+    file_path: "uploads/tickets/" + T9 + "/incident-damaged-outlet.jpg",
+    file_size: 1987320,
+    content_type: "image/jpeg",
+    created_at: new Date("2026-04-06T07:34:00.000Z")
   }
 ]);
 print("Inserted " + db.ticket_attachments.countDocuments() + " ticket attachments.");
@@ -1003,6 +1123,28 @@ db.notifications.insertMany([
     entity_id: T7,
     is_read: true,
     created_at: new Date("2026-04-02T14:30:00.000Z")
+  },
+  {
+    _id: "91a2b3c4-0011-0011-0011-000000000011",
+    recipient_id: U_TECH_KASUN,
+    type: "TICKET_ASSIGNED",
+    title: "Ticket Assigned to You",
+    message: "You have been assigned to incident ticket: 'Burnt and damaged electrical outlet in Block D Level 1 corridor'. CRITICAL priority — please isolate the outlets immediately.",
+    entity_type: "TICKET",
+    entity_id: T9,
+    is_read: false,
+    created_at: new Date("2026-04-06T09:15:00.000Z")
+  },
+  {
+    _id: "91a2b3c4-0012-0012-0012-000000000012",
+    recipient_id: U_SACHINI,
+    type: "TICKET_STATUS_CHANGED",
+    title: "Ticket In Progress",
+    message: "Your incident ticket 'Burnt and damaged electrical outlet in Block D Level 1 corridor' is now IN PROGRESS. Kasun Bandara has been assigned.",
+    entity_type: "TICKET",
+    entity_id: T9,
+    is_read: false,
+    created_at: new Date("2026-04-06T09:15:00.000Z")
   }
 ]);
 print("Inserted " + db.notifications.countDocuments() + " notifications.");

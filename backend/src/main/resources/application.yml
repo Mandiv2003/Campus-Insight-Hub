@@ -16,7 +16,7 @@ spring:
   # ── MongoDB Atlas ───────────────────────────────────────────────────────
   data:
     mongodb:
-      uri: mongodb+srv://smartcampus-user:root@cluster0.jjyplse.mongodb.net/smartcampus?appName=Cluster0
+      uri: ${MONGODB_URI}
       database: smartcampus
 
   # ── Google OAuth2 ───────────────────────────────────────────────────────

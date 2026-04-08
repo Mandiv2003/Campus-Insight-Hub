@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -49,6 +50,12 @@ public class UserController {
     @PatchMapping("/api/v1/admin/users/{id}/deactivate")
     public ResponseEntity<ApiResponse<UserDto>> deactivate(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(userService.deactivate(id)));
+    }
+
+    @DeleteMapping("/api/v1/admin/users/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable String id) {
+        userService.deleteUser(id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @GetMapping("/api/v1/users/technicians")

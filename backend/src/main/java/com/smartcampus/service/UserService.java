@@ -114,6 +114,11 @@ public class UserService {
         return userMapper.toDto(userRepository.save(user));
     }
 
+    public void deleteUser(String id) {
+        User user = findOrThrow(id);
+        userRepository.delete(user);
+    }
+
     public List<UserDto> getTechnicians() {
         return userMapper.toDtoList(
                 userRepository.findByRoleAndActiveTrue(Role.TECHNICIAN));

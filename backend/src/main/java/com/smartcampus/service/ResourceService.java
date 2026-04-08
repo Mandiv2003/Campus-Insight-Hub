@@ -36,8 +36,12 @@ public class ResourceService {
     public Page<ResourceResponseDto> listResources(ResourceType type, String location,
                                                     Integer minCapacity, ResourceStatus status,
                                                     Pageable pageable) {
-        // Never include archived resources in public listings
-        Criteria criteria = Criteria.where("status").ne(ResourceStatus.ARCHIVED.name());
+        // When filtering by a specific status, use that directly.
+        // Otherwise exclude ARCHIVED from public listings.
+        // (Cannot add two Criteria on the same field via chaining — use is() vs ne().)
+        Criteria criteria = (status != null)
+                ? Criteria.where("status").is(status.name())
+                : Criteria.where("status").ne(ResourceStatus.ARCHIVED.name());
 
         if (type != null)
             criteria.and("type").is(type.name());
@@ -45,8 +49,6 @@ public class ResourceService {
             criteria.and("location").regex(location, "i");
         if (minCapacity != null)
             criteria.and("capacity").gte(minCapacity);
-        if (status != null)
-            criteria.and("status").is(status.name());
 
         Query query = new Query(criteria).with(pageable);
         List<Resource> resources = mongoTemplate.find(query, Resource.class);

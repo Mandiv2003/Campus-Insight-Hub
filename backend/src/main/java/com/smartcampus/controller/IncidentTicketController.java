@@ -3,8 +3,6 @@ package com.smartcampus.controller;
 import com.smartcampus.dto.ApiResponse;
 import com.smartcampus.dto.PagedResponse;
 import com.smartcampus.dto.ticket.*;
-import com.smartcampus.model.enums.TicketCategory;
-import com.smartcampus.model.enums.TicketPriority;
 import com.smartcampus.model.enums.TicketStatus;
 import com.smartcampus.service.IncidentTicketService;
 import com.smartcampus.service.TicketCommentService;
@@ -80,13 +78,13 @@ public class IncidentTicketController {
     @GetMapping("/api/v1/admin/tickets")
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
     public ResponseEntity<ApiResponse<PagedResponse<TicketResponseDto>>> listAll(
-            @RequestParam(required = false) TicketStatus status,
-            @RequestParam(required = false) TicketPriority priority,
-            @RequestParam(required = false) TicketCategory category,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String priority,
+            @RequestParam(required = false) String category,
             @RequestParam(required = false) String assignedTo,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        PageRequest pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         return ResponseEntity.ok(ApiResponse.success(
                 PagedResponse.of(ticketService.listAll(status, priority, category, assignedTo, pageable))));
     }

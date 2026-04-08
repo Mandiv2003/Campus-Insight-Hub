@@ -145,9 +145,13 @@ public class IncidentTicketService {
     }
 
     // ── Admin/Tech: list all tickets ──────────────────────────────────────
-    public Page<TicketResponseDto> listAll(TicketStatus status, TicketPriority priority,
-                                           TicketCategory category, String assignedTo,
+    public Page<TicketResponseDto> listAll(String statusStr, String priorityStr,
+                                           String categoryStr, String assignedTo,
                                            Pageable pageable) {
+        TicketStatus   status   = (statusStr   != null && !statusStr.isBlank())   ? TicketStatus.valueOf(statusStr.toUpperCase())   : null;
+        TicketPriority priority = (priorityStr != null && !priorityStr.isBlank()) ? TicketPriority.valueOf(priorityStr.toUpperCase()) : null;
+        TicketCategory category = (categoryStr != null && !categoryStr.isBlank()) ? TicketCategory.valueOf(categoryStr.toUpperCase()) : null;
+
         List<Criteria> parts = new ArrayList<>();
         if (status != null)     parts.add(Criteria.where("status").is(status.name()));
         if (priority != null)   parts.add(Criteria.where("priority").is(priority.name()));

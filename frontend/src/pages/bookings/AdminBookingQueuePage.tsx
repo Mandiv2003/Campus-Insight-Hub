@@ -1,128 +1,144 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
-  Box, Typography, Table, TableHead, TableBody, TableRow, TableCell,
-  TableContainer, Paper, Button, CircularProgress, Pagination,
-  FormControl, InputLabel, Select, MenuItem, TextField, Dialog,
-  DialogTitle, DialogContent, DialogActions,
+  Box, Button, Table, TableHead, TableBody, TableRow, TableCell,
+  TableContainer, Paper, CircularProgress, Alert, Select, MenuItem,
+  FormControl, InputLabel, Dialog, DialogTitle, DialogContent,
+  DialogActions, TextField, Typography,
 } from '@mui/material'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import CancelIcon from '@mui/icons-material/Cancel'
+import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined'
+import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined'
 import { getAdminBookings, approveBooking, rejectBooking } from '../../api/bookingApi'
-import BookingStatusChip from './components/BookingStatusChip'
-import { format } from 'date-fns'
 import type { Booking, BookingStatus } from '../../types/booking'
+import { format } from 'date-fns'
+import PageHeader from '../../components/common/PageHeader'
+import StatusBadge from '../../components/common/StatusBadge'
+import EmptyState from '../../components/common/EmptyState'
+
+const STATUSES: BookingStatus[] = ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED']
 
 export default function AdminBookingQueuePage() {
+  const navigate = useNavigate()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
-  const [status, setStatus] = useState<BookingStatus | ''>('PENDING')
-  const [page, setPage] = useState(0)
-  const [totalPages, setTotalPages] = useState(0)
-  const [rejectOpen, setRejectOpen] = useState(false)
-  const [rejectTarget, setRejectTarget] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState('PENDING')
+  const [rejectDialog, setRejectDialog] = useState<Booking | null>(null)
   const [rejectReason, setRejectReason] = useState('')
-  const [processing, setProcessing] = useState(false)
-
-  useEffect(() => { load() }, [status, page])
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
 
   const load = async () => {
     setLoading(true)
+    setError(null)
     try {
-      const params: Record<string, unknown> = { page, size: 20 }
-      if (status) params.status = status
+      const params: Record<string, string> = {}
+      if (statusFilter) params.status = statusFilter
       const res = await getAdminBookings(params)
-      setBookings(res.data.data.content)
-      setTotalPages(res.data.data.totalPages)
+      setBookings(res.data?.data?.content ?? res.data?.data ?? [])
+    } catch {
+      setError('Failed to load bookings.')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleApprove = async (id: string) => {
-    setProcessing(true)
-    try { await approveBooking(id); load() }
-    catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      alert(msg ?? 'Conflict detected — cannot approve')
-    } finally { setProcessing(false) }
+  useEffect(() => { load() }, [statusFilter])
+
+  const handleApprove = async (b: Booking) => {
+    setActionLoading(b.id)
+    try {
+      await approveBooking(b.id)
+      setBookings(prev => prev.map(x => x.id === b.id ? { ...x, status: 'APPROVED' } : x))
+    } catch {
+      setError('Failed to approve booking.')
+    } finally {
+      setActionLoading(null)
+    }
   }
 
   const handleReject = async () => {
-    if (!rejectTarget || !rejectReason.trim()) return
-    setProcessing(true)
+    if (!rejectDialog || !rejectReason.trim()) return
+    setActionLoading(rejectDialog.id)
     try {
-      await rejectBooking(rejectTarget, { rejectionReason: rejectReason })
-      setRejectOpen(false)
+      await rejectBooking(rejectDialog.id, { rejectionReason: rejectReason })
+      setBookings(prev => prev.map(x => x.id === rejectDialog.id ? { ...x, status: 'REJECTED' } : x))
+      setRejectDialog(null)
       setRejectReason('')
-      load()
-    } finally { setProcessing(false) }
+    } catch {
+      setError('Failed to reject booking.')
+    } finally {
+      setActionLoading(null)
+    }
   }
 
-  const openReject = (id: string) => { setRejectTarget(id); setRejectOpen(true) }
-
-  const fmt = (dt: string) => format(new Date(dt), 'dd MMM, HH:mm')
-
   return (
-    <Box p={3}>
-      <Typography variant="h5" fontWeight={700} mb={3}>Booking Queue</Typography>
+    <Box>
+      <PageHeader title="Booking Queue" subtitle="Review and process booking requests" />
 
-      <Box display="flex" gap={2} mb={3}>
-        <FormControl size="small" sx={{ minWidth: 160 }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+        <FormControl sx={{ minWidth: 180 }}>
           <InputLabel>Status</InputLabel>
-          <Select value={status} label="Status"
-                  onChange={(e) => { setStatus(e.target.value as BookingStatus | ''); setPage(0) }}>
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value="PENDING">Pending</MenuItem>
-            <MenuItem value="APPROVED">Approved</MenuItem>
-            <MenuItem value="REJECTED">Rejected</MenuItem>
-            <MenuItem value="CANCELLED">Cancelled</MenuItem>
+          <Select value={statusFilter} label="Status" onChange={e => setStatusFilter(e.target.value)}>
+            <MenuItem value="">All statuses</MenuItem>
+            {STATUSES.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
           </Select>
         </FormControl>
       </Box>
 
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
       {loading ? (
-        <Box display="flex" justifyContent="center" py={8}><CircularProgress /></Box>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>
+      ) : bookings.length === 0 ? (
+        <EmptyState title="No bookings" description="There are no bookings matching the selected filter." />
       ) : (
-        <TableContainer component={Paper} variant="outlined">
-          <Table size="small">
+        <TableContainer component={Paper}>
+          <Table>
             <TableHead>
               <TableRow>
-                <TableCell><strong>Title</strong></TableCell>
-                <TableCell><strong>Resource</strong></TableCell>
-                <TableCell><strong>Requested by</strong></TableCell>
-                <TableCell><strong>Time</strong></TableCell>
-                <TableCell><strong>Status</strong></TableCell>
-                <TableCell align="right"><strong>Actions</strong></TableCell>
+                <TableCell>Title</TableCell>
+                <TableCell>Resource</TableCell>
+                <TableCell>Requested By</TableCell>
+                <TableCell>Start</TableCell>
+                <TableCell>End</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {bookings.map((b) => (
-                <TableRow key={b.id} hover>
-                  <TableCell sx={{ maxWidth: 200 }}>
-                    <Typography noWrap>{b.title}</Typography>
-                  </TableCell>
+              {bookings.map(b => (
+                <TableRow key={b.id}>
+                  <TableCell sx={{ fontWeight: 600 }}>{b.title}</TableCell>
                   <TableCell>{b.resourceName}</TableCell>
-                  <TableCell>{b.requestedByName}</TableCell>
-                  <TableCell>
-                    <Typography variant="body2" noWrap>
-                      {fmt(b.startDatetime)} – {fmt(b.endDatetime)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell><BookingStatusChip status={b.status} /></TableCell>
+                  <TableCell sx={{ color: '#6b7280' }}>{b.requestedByName}</TableCell>
+                  <TableCell sx={{ color: '#6b7280' }}>{format(new Date(b.startDatetime), 'dd MMM, HH:mm')}</TableCell>
+                  <TableCell sx={{ color: '#6b7280' }}>{format(new Date(b.endDatetime), 'HH:mm')}</TableCell>
+                  <TableCell><StatusBadge label={b.status} /></TableCell>
                   <TableCell align="right">
+                    <Button size="small" onClick={() => navigate(`/bookings/${b.id}`)}>View</Button>
                     {b.status === 'PENDING' && (
-                      <Box display="flex" gap={1} justifyContent="flex-end">
-                        <Button size="small" variant="contained" color="success"
-                                startIcon={<CheckCircleIcon />} disabled={processing}
-                                onClick={() => handleApprove(b.id)}>
+                      <>
+                        <Button
+                          size="small"
+                          color="success"
+                          startIcon={<CheckOutlinedIcon fontSize="small" />}
+                          sx={{ ml: 1 }}
+                          onClick={() => handleApprove(b)}
+                          disabled={actionLoading === b.id}
+                        >
                           Approve
                         </Button>
-                        <Button size="small" variant="outlined" color="error"
-                                startIcon={<CancelIcon />} disabled={processing}
-                                onClick={() => openReject(b.id)}>
+                        <Button
+                          size="small"
+                          color="error"
+                          startIcon={<CloseOutlinedIcon fontSize="small" />}
+                          sx={{ ml: 1 }}
+                          onClick={() => setRejectDialog(b)}
+                          disabled={actionLoading === b.id}
+                        >
                           Reject
                         </Button>
-                      </Box>
+                      </>
                     )}
                   </TableCell>
                 </TableRow>
@@ -132,24 +148,28 @@ export default function AdminBookingQueuePage() {
         </TableContainer>
       )}
 
-      {totalPages > 1 && (
-        <Box display="flex" justifyContent="center" mt={3}>
-          <Pagination count={totalPages} page={page + 1} onChange={(_, p) => setPage(p - 1)} />
-        </Box>
-      )}
-
-      <Dialog open={rejectOpen} onClose={() => setRejectOpen(false)} fullWidth maxWidth="sm">
+      <Dialog open={!!rejectDialog} onClose={() => setRejectDialog(null)} maxWidth="sm" fullWidth>
         <DialogTitle>Reject Booking</DialogTitle>
-        <DialogContent>
-          <TextField label="Rejection Reason" required fullWidth multiline rows={3}
-                     value={rejectReason} onChange={(e) => setRejectReason(e.target.value)}
-                     sx={{ mt: 1 }} />
+        <DialogContent sx={{ pt: 2 }}>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Rejecting <strong>{rejectDialog?.title}</strong> by {rejectDialog?.requestedByName}. Please provide a reason.
+          </Typography>
+          <TextField
+            label="Rejection reason *"
+            multiline rows={3} fullWidth
+            value={rejectReason}
+            onChange={e => setRejectReason(e.target.value)}
+            required
+          />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRejectOpen(false)}>Cancel</Button>
-          <Button onClick={handleReject} color="error"
-                  disabled={!rejectReason.trim() || processing}>
-            {processing ? <CircularProgress size={20} /> : 'Confirm Reject'}
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setRejectDialog(null)}>Cancel</Button>
+          <Button
+            variant="contained" color="error"
+            onClick={handleReject}
+            disabled={!rejectReason.trim() || !!actionLoading}
+          >
+            Reject Booking
           </Button>
         </DialogActions>
       </Dialog>

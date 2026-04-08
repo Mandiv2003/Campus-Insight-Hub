@@ -1,557 +1,593 @@
-import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import {
-  Box,
-  Button,
-  Divider,
-  IconButton,
-  InputAdornment,
-  Link,
-  Paper,
-  Tab,
-  Tabs,
-  TextField,
-  Typography,
-  Alert,
-  CircularProgress,
-  useMediaQuery,
-  useTheme,
+  Box, Typography, TextField, Button, Alert,
+  InputAdornment, IconButton,
 } from '@mui/material'
-import {
-  Visibility,
-  VisibilityOff,
-  School,
-  CalendarMonth,
-  ConfirmationNumber,
-  Notifications,
-} from '@mui/icons-material'
-import { useAuth } from '../../context/AuthContext'
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
+import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined'
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
+import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined'
+import EventSeatOutlinedIcon from '@mui/icons-material/EventSeatOutlined'
+import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined'
+import NotificationsActiveOutlinedIcon from '@mui/icons-material/NotificationsActiveOutlined'
 import { loginLocal, registerLocal } from '../../api/authApi'
+import { useAuth } from '../../context/AuthContext'
+import { IMG } from '../../assets/images'
 
-// ── types ────────────────────────────────────────────────────────────────────
+interface LoginForm { identifier: string; password: string }
+interface RegisterForm { fullName: string; email: string; username?: string; password: string; confirmPassword: string }
 
-interface LoginFormData {
-  identifier: string
-  password: string
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:8080'
+
+// ── Shared input style ───────────────────────────────────────────────────────
+const inputSx = {
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: '#171f33',
+    borderRadius: '8px',
+    color: '#dae2fd',
+    '& fieldset': { borderColor: 'rgba(68,70,83,0.4)' },
+    '&:hover fieldset': { borderColor: 'rgba(184,196,255,0.4)' },
+    '&.Mui-focused fieldset': { borderColor: '#b8c4ff', borderWidth: 2 },
+    '& input': { color: '#dae2fd' },
+    '& input::placeholder': { color: '#8e909f', opacity: 1 },
+  },
+  '& .MuiInputLabel-root': { color: '#8e909f', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' },
+  '& .MuiInputLabel-root.Mui-focused': { color: '#b8c4ff' },
+  '& .MuiFormHelperText-root': { color: '#ffb4ab' },
 }
-
-interface RegisterFormData {
-  fullName: string
-  email: string
-  username: string
-  password: string
-  confirmPassword: string
-}
-
-// ── Google icon SVG ──────────────────────────────────────────────────────────
-
-function GoogleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-      <path
-        fill="#4285F4"
-        d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
-      />
-      <path
-        fill="#34A853"
-        d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M3.964 10.706A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.038l3.007-2.332z"
-      />
-      <path
-        fill="#EA4335"
-        d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.962L3.964 6.294C4.672 4.169 6.656 3.58 9 3.58z"
-      />
-    </svg>
-  )
-}
-
-// ── feature list shown on the hero panel ────────────────────────────────────
-
-const FEATURES = [
-  { icon: <School sx={{ fontSize: 20 }} />, text: 'Browse & book campus facilities' },
-  { icon: <CalendarMonth sx={{ fontSize: 20 }} />, text: 'Manage room and equipment bookings' },
-  { icon: <ConfirmationNumber sx={{ fontSize: 20 }} />, text: 'Report and track incident tickets' },
-  { icon: <Notifications sx={{ fontSize: 20 }} />, text: 'Real-time operational notifications' },
-]
-
-// ── component ────────────────────────────────────────────────────────────────
 
 export default function LoginPage() {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const navigate = useNavigate()
   const { login } = useAuth()
-
-  const [searchParams] = useSearchParams()
-
-  const [tab, setTab] = useState<0 | 1>(0)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [tab, setTab] = useState(0)
+  const [showPw, setShowPw] = useState(false)
+  const [showConfirmPw, setShowConfirmPw] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  // Show error if Google OAuth2 failed and backend redirected back here
-  useEffect(() => {
-    const oauthError = searchParams.get('oauth_error')
-    if (oauthError) {
-      setErrorMsg(`Google sign-in failed: ${decodeURIComponent(oauthError)}`)
-    }
-  }, [])
+  const loginForm = useForm<LoginForm>({ mode: 'onBlur' })
+  const registerForm = useForm<RegisterForm>({ mode: 'onBlur' })
 
-  // sign-in form
-  const {
-    register: regLogin,
-    handleSubmit: handleLoginSubmit,
-    formState: { errors: loginErrors },
-  } = useForm<LoginFormData>({ mode: 'onBlur' })
-
-  // sign-up form
-  const {
-    register: regSignup,
-    handleSubmit: handleSignupSubmit,
-    watch: watchSignup,
-    formState: { errors: signupErrors },
-  } = useForm<RegisterFormData>({ mode: 'onBlur' })
-
-  const signupPassword = watchSignup('password')
-
-  const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google'
-  }
-
-  const onLogin = handleLoginSubmit(async (data) => {
-    setErrorMsg(null)
+  const handleLogin = loginForm.handleSubmit(async (data) => {
+    setError(null)
     setLoading(true)
     try {
-      const res = await loginLocal({ identifier: data.identifier, password: data.password })
+      const res = await loginLocal(data)
       login(res.data.data.token)
       navigate('/', { replace: true })
-    } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        'Sign in failed. Please check your credentials.'
-      setErrorMsg(msg)
+    } catch (err: any) {
+      setError(err.response?.data?.message ?? 'Invalid credentials. Please try again.')
     } finally {
       setLoading(false)
     }
   })
 
-  const onRegister = handleSignupSubmit(async (data) => {
-    setErrorMsg(null)
+  const handleRegister = registerForm.handleSubmit(async (data) => {
+    setError(null)
+    if (data.password !== data.confirmPassword) {
+      setError('Passwords do not match.')
+      return
+    }
     setLoading(true)
     try {
-      const res = await registerLocal({
-        fullName: data.fullName,
-        email: data.email,
-        username: data.username || undefined,
-        password: data.password,
-      })
+      const { confirmPassword: _, ...payload } = data
+      const res = await registerLocal(payload)
       login(res.data.data.token)
       navigate('/', { replace: true })
-    } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        'Registration failed. Please try again.'
-      setErrorMsg(msg)
+    } catch (err: any) {
+      setError(err.response?.data?.message ?? 'Registration failed. Please try again.')
     } finally {
       setLoading(false)
     }
   })
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', bgcolor: 'grey.50' }}>
+    <Box sx={{
+      minHeight: '100vh',
+      display: 'flex',
+      backgroundColor: '#0b1326',
+      fontFamily: '"Plus Jakarta Sans", sans-serif',
+    }}>
+      {/* ── Left panel: branding ──────────────────────────────── */}
+      <Box sx={{
+        display: { xs: 'none', lg: 'flex' },
+        width: '50%',
+        flexShrink: 0,
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        p: '48px',
+        backgroundColor: '#060e20',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        {/* Campus background image */}
+        <Box component="img" src={IMG.bgCampusDusk} alt="" sx={{
+          position: 'absolute', inset: 0, width: '100%', height: '100%',
+          objectFit: 'cover', opacity: 0.35, mixBlendMode: 'luminosity',
+        }} />
+        {/* Gradient overlay */}
+        <Box sx={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(135deg, #060e20 0%, rgba(6,14,32,0.7) 50%, transparent 100%)',
+        }} />
+        {/* Decorative blobs */}
+        <Box sx={{
+          position: 'absolute',
+          top: -96,
+          right: -96,
+          width: 384,
+          height: 384,
+          borderRadius: '50%',
+          background: '#1e40af',
+          filter: 'blur(120px)',
+          opacity: 0.15,
+          pointerEvents: 'none',
+        }} />
+        <Box sx={{
+          position: 'absolute',
+          bottom: 160,
+          left: -80,
+          width: 320,
+          height: 320,
+          borderRadius: '50%',
+          background: '#872d00',
+          filter: 'blur(100px)',
+          opacity: 0.12,
+          pointerEvents: 'none',
+        }} />
 
-      {/* ── Left hero panel (desktop only) ──────────────────────────────── */}
-      {!isMobile && (
-        <Box
-          sx={{
-            flex: 1,
-            background: 'linear-gradient(145deg, #1565c0 0%, #0d47a1 40%, #1a237e 100%)',
+        {/* Logo */}
+        <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box sx={{
+            width: 48,
+            height: 48,
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, #b8c4ff 0%, #1e40af 100%)',
             display: 'flex',
-            flexDirection: 'column',
+            alignItems: 'center',
             justifyContent: 'center',
-            alignItems: 'flex-start',
-            px: 8,
-            py: 6,
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          {/* decorative circles */}
-          <Box sx={{
-            position: 'absolute', top: -80, right: -80,
-            width: 320, height: 320, borderRadius: '50%',
-            bgcolor: 'rgba(255,255,255,0.06)',
-          }} />
-          <Box sx={{
-            position: 'absolute', bottom: -120, left: -60,
-            width: 400, height: 400, borderRadius: '50%',
-            bgcolor: 'rgba(255,255,255,0.04)',
-          }} />
-
-          {/* logo + product name */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 5 }}>
-            <Box sx={{
-              width: 44, height: 44, borderRadius: 2,
-              bgcolor: 'rgba(255,255,255,0.15)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <School sx={{ color: 'white', fontSize: 26 }} />
-            </Box>
-            <Typography variant="h6" sx={{ color: 'white', fontWeight: 700, letterSpacing: 0.3 }}>
-              Campus Hub
+            boxShadow: '0 8px 24px rgba(30,64,175,0.25)',
+            flexShrink: 0,
+          }}>
+            <Typography sx={{ color: '#001453', fontSize: 18, fontWeight: 800, letterSpacing: '-0.02em' }}>
+              SC
             </Typography>
           </Box>
-
-          {/* headline */}
-          <Typography variant="h3" sx={{
-            color: 'white', fontWeight: 800, lineHeight: 1.2, mb: 2, maxWidth: 420,
-          }}>
-            Manage your campus,{' '}
-            <Box component="span" sx={{ color: '#90caf9' }}>smarter.</Box>
-          </Typography>
-
-          <Typography variant="body1" sx={{
-            color: 'rgba(255,255,255,0.75)', mb: 5, maxWidth: 380, lineHeight: 1.7,
-          }}>
-            One platform for facilities, bookings, incident reporting, and real-time
-            operational visibility across your institution.
-          </Typography>
-
-          {/* feature list */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {FEATURES.map((f) => (
-              <Box key={f.text} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Box sx={{
-                  width: 36, height: 36, borderRadius: 1.5,
-                  bgcolor: 'rgba(255,255,255,0.12)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#90caf9', flexShrink: 0,
-                }}>
-                  {f.icon}
-                </Box>
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)' }}>
-                  {f.text}
-                </Typography>
-              </Box>
-            ))}
+          <Box>
+            <Typography sx={{ color: '#ffffff', fontSize: 20, fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.01em' }}>
+              Campus Hub
+            </Typography>
+            <Typography sx={{ color: '#b8c4ff', fontSize: 10, fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+              Your campus, connected.
+            </Typography>
           </Box>
-
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', mt: 'auto', pt: 6 }}>
-            IT3030 PAF 2026 · SLIIT
-          </Typography>
         </Box>
-      )}
 
-      {/* ── Right form panel ─────────────────────────────────────────────── */}
-      <Box sx={{
-        width: { xs: '100%', md: 480 },
-        flexShrink: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        px: { xs: 2, sm: 4 },
-        py: 4,
-      }}>
-        <Box sx={{ width: '100%', maxWidth: 400 }}>
+        {/* Hero content */}
+        <Box sx={{ position: 'relative', zIndex: 1, maxWidth: 420 }}>
+          <Typography sx={{
+            color: '#ffffff',
+            fontSize: 44,
+            fontWeight: 800,
+            lineHeight: 1.1,
+            letterSpacing: '-0.02em',
+            mb: 4,
+          }}>
+            Elevate Your{' '}
+            <Box component="br" />
+            <Box component="span" sx={{
+              background: 'linear-gradient(90deg, #b8c4ff 0%, #dde1ff 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>
+              Academic Journey
+            </Box>
+          </Typography>
 
-          {/* mobile-only header */}
-          {isMobile && (
-            <Box sx={{ textAlign: 'center', mb: 4 }}>
+          {/* Feature items */}
+          {[
+            { icon: <EventSeatOutlinedIcon sx={{ fontSize: 20, color: '#b8c4ff' }} />, label: 'Resource Booking' },
+            { icon: <ReportProblemOutlinedIcon sx={{ fontSize: 20, color: '#b8c4ff' }} />, label: 'Incident Reporting' },
+            { icon: <NotificationsActiveOutlinedIcon sx={{ fontSize: 20, color: '#b8c4ff' }} />, label: 'Real-time Notifications' },
+          ].map(({ icon, label }) => (
+            <Box key={label} sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              mb: 2.5,
+            }}>
               <Box sx={{
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                width: 56, height: 56, borderRadius: 3, bgcolor: 'primary.main', mb: 2,
+                width: 40,
+                height: 40,
+                borderRadius: '8px',
+                backgroundColor: '#171f33',
+                border: '1px solid rgba(68,70,83,0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
               }}>
-                <School sx={{ color: 'white', fontSize: 30 }} />
+                {icon}
               </Box>
-              <Typography variant="h5" fontWeight={800} gutterBottom>
-                Smart Campus Hub
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Manage facilities, bookings &amp; incidents
+              <Typography sx={{ color: '#dae2fd', fontWeight: 500, fontSize: 14 }}>
+                {label}
               </Typography>
             </Box>
-          )}
+          ))}
+        </Box>
 
-          <Paper elevation={0} sx={{
-            p: { xs: 3, sm: 4 },
-            border: '1px solid', borderColor: 'divider',
-            borderRadius: 3, bgcolor: 'white',
+        {/* Footer */}
+        <Typography sx={{ position: 'relative', zIndex: 1, color: '#c4c5d5', fontSize: 13 }}>
+          © 2024 Smart Campus Hub. Standardized Institutional Excellence.
+        </Typography>
+      </Box>
+
+      {/* ── Right panel: form ─────────────────────────────────── */}
+      <Box sx={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        p: { xs: 3, sm: 6 },
+        backgroundColor: '#0b1326',
+      }}>
+        <Box sx={{ width: '100%', maxWidth: 440 }}>
+          {/* Card */}
+          <Box sx={{
+            backgroundColor: '#131b2e',
+            borderRadius: '12px',
+            boxShadow: '0 24px 48px rgba(6,14,32,0.6)',
+            border: '1px solid rgba(68,70,83,0.08)',
+            overflow: 'hidden',
           }}>
-            {/* tab selector */}
-            <Tabs
-              value={tab}
-              onChange={(_, v) => { setTab(v); setErrorMsg(null) }}
-              variant="fullWidth"
-              sx={{
-                mb: 3,
-                borderBottom: 1, borderColor: 'divider',
-                '& .MuiTab-root': { fontWeight: 600, textTransform: 'none', fontSize: '0.95rem' },
-              }}
-            >
-              <Tab label="Sign In" />
-              <Tab label="Sign Up" />
-            </Tabs>
-
-            {/* server / network error */}
-            {errorMsg && (
-              <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setErrorMsg(null)}>
-                {errorMsg}
-              </Alert>
-            )}
-
-            {/* ── Sign In ──────────────────────────────────────────────── */}
-            {tab === 0 && (
-              <Box component="form" onSubmit={onLogin} noValidate>
-                <TextField
-                  label="Email or username"
-                  fullWidth
-                  autoComplete="username"
-                  autoFocus
-                  margin="normal"
-                  inputProps={{ 'aria-label': 'Email or username' }}
-                  error={!!loginErrors.identifier}
-                  helperText={loginErrors.identifier?.message}
-                  {...regLogin('identifier', { required: 'Email or username is required' })}
-                />
-                <TextField
-                  label="Password"
-                  fullWidth
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  margin="normal"
-                  inputProps={{ 'aria-label': 'Password' }}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowPassword((p) => !p)}
-                          edge="end"
-                          aria-label={showPassword ? 'Hide password' : 'Show password'}
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
+            {/* Tabs */}
+            <Box sx={{
+              display: 'flex',
+              gap: 4,
+              px: 4,
+              pt: 3,
+              borderBottom: '1px solid rgba(68,70,83,0.15)',
+            }}>
+              {['Sign In', 'Register'].map((label, idx) => (
+                <Box
+                  key={label}
+                  component="button"
+                  onClick={() => { setTab(idx); setError(null) }}
+                  sx={{
+                    pb: 2,
+                    background: 'none',
+                    border: 'none',
+                    borderBottom: tab === idx ? '2px solid #b8c4ff' : '2px solid transparent',
+                    cursor: 'pointer',
+                    fontSize: 13,
+                    fontWeight: tab === idx ? 700 : 600,
+                    color: tab === idx ? '#b8c4ff' : '#c4c5d5',
+                    fontFamily: '"Plus Jakarta Sans", sans-serif',
+                    transition: 'color 0.15s',
+                    mb: '-1px',
+                    '&:hover': { color: tab === idx ? '#b8c4ff' : '#dae2fd' },
                   }}
-                  error={!!loginErrors.password}
-                  helperText={loginErrors.password?.message}
-                  {...regLogin('password', { required: 'Password is required' })}
-                />
-
-                <Box sx={{ textAlign: 'right', mt: 0.5, mb: 1 }}>
-                  <Link
-                    component="button"
-                    type="button"
-                    variant="caption"
-                    underline="hover"
-                    color="primary"
-                    tabIndex={-1}
-                    onClick={() => {/* TODO: forgot password */}}
-                  >
-                    Forgot password?
-                  </Link>
+                >
+                  {label}
                 </Box>
+              ))}
+            </Box>
 
-                <Button
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  size="large"
-                  disabled={loading}
-                  sx={{ mt: 1, mb: 2, py: 1.4, fontWeight: 700, textTransform: 'none', borderRadius: 2 }}
-                >
-                  {loading ? <CircularProgress size={22} color="inherit" /> : 'Sign In'}
-                </Button>
-
-                <Divider sx={{ my: 2 }}>
-                  <Typography variant="caption" color="text.secondary">or</Typography>
-                </Divider>
-
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  size="large"
-                  onClick={handleGoogleLogin}
-                  startIcon={<GoogleIcon />}
-                  sx={{
-                    py: 1.3, fontWeight: 600, textTransform: 'none', borderRadius: 2,
-                    borderColor: 'divider', color: 'text.primary',
-                    '&:hover': { borderColor: 'primary.main', bgcolor: 'primary.50' },
-                  }}
-                >
-                  Continue with Google
-                </Button>
-
-                <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 3 }}>
-                  Don&apos;t have an account?{' '}
-                  <Link
-                    component="button"
-                    type="button"
-                    underline="hover"
-                    fontWeight={600}
-                    onClick={() => { setTab(1); setErrorMsg(null) }}
-                  >
-                    Sign up
-                  </Link>
+            <Box sx={{ p: { xs: 3, sm: 4 } }}>
+              {/* Header */}
+              <Box sx={{ mb: 3.5 }}>
+                <Typography sx={{
+                  color: '#dae2fd',
+                  fontSize: 26,
+                  fontWeight: 700,
+                  letterSpacing: '-0.01em',
+                  lineHeight: 1.2,
+                  mb: 0.75,
+                }}>
+                  {tab === 0 ? 'Welcome back' : 'Create your account'}
+                </Typography>
+                <Typography sx={{ color: '#c4c5d5', fontSize: 13 }}>
+                  {tab === 0 ? 'Sign in to your campus account' : 'Complete the form below to join the Campus Hub.'}
                 </Typography>
               </Box>
-            )}
 
-            {/* ── Sign Up ──────────────────────────────────────────────── */}
-            {tab === 1 && (
-              <Box component="form" onSubmit={onRegister} noValidate>
-                <TextField
-                  label="Full name"
-                  fullWidth
-                  autoComplete="name"
-                  autoFocus
-                  margin="normal"
-                  inputProps={{ 'aria-label': 'Full name' }}
-                  error={!!signupErrors.fullName}
-                  helperText={signupErrors.fullName?.message}
-                  {...regSignup('fullName', {
-                    required: 'Full name is required',
-                    minLength: { value: 2, message: 'Name must be at least 2 characters' },
-                  })}
-                />
-                <TextField
-                  label="Email address"
-                  fullWidth
-                  type="email"
-                  autoComplete="email"
-                  margin="normal"
-                  inputProps={{ 'aria-label': 'Email address' }}
-                  error={!!signupErrors.email}
-                  helperText={signupErrors.email?.message}
-                  {...regSignup('email', {
-                    required: 'Email is required',
-                    pattern: { value: /^\S+@\S+\.\S+$/, message: 'Invalid email address' },
-                  })}
-                />
-                <TextField
-                  label="Username (optional)"
-                  fullWidth
-                  autoComplete="username"
-                  margin="normal"
-                  inputProps={{ 'aria-label': 'Username (optional)' }}
-                  error={!!signupErrors.username}
-                  helperText={signupErrors.username?.message ?? 'You can sign in with this later'}
-                  {...regSignup('username', {
-                    pattern: {
-                      value: /^[a-zA-Z0-9_]{3,30}$/,
-                      message: '3–30 chars, letters/numbers/underscores only',
-                    },
-                  })}
-                />
-                <TextField
-                  label="Password"
-                  fullWidth
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  margin="normal"
-                  inputProps={{ 'aria-label': 'Password' }}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowPassword((p) => !p)}
-                          edge="end"
-                          aria-label={showPassword ? 'Hide password' : 'Show password'}
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                  error={!!signupErrors.password}
-                  helperText={signupErrors.password?.message ?? 'At least 8 characters'}
-                  {...regSignup('password', {
-                    required: 'Password is required',
-                    minLength: { value: 8, message: 'Password must be at least 8 characters' },
-                  })}
-                />
-                <TextField
-                  label="Confirm password"
-                  fullWidth
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  margin="normal"
-                  inputProps={{ 'aria-label': 'Confirm password' }}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowConfirmPassword((p) => !p)}
-                          edge="end"
-                          aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                        >
-                          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                  error={!!signupErrors.confirmPassword}
-                  helperText={signupErrors.confirmPassword?.message}
-                  {...regSignup('confirmPassword', {
-                    required: 'Please confirm your password',
-                    validate: (v) => v === signupPassword || 'Passwords do not match',
-                  })}
-                />
-
-                <Button
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  size="large"
-                  disabled={loading}
-                  sx={{ mt: 2, mb: 2, py: 1.4, fontWeight: 700, textTransform: 'none', borderRadius: 2 }}
-                >
-                  {loading ? <CircularProgress size={22} color="inherit" /> : 'Create Account'}
-                </Button>
-
-                <Divider sx={{ my: 2 }}>
-                  <Typography variant="caption" color="text.secondary">or</Typography>
-                </Divider>
-
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  size="large"
-                  onClick={handleGoogleLogin}
-                  startIcon={<GoogleIcon />}
+              {error && (
+                <Alert
+                  severity="error"
                   sx={{
-                    py: 1.3, fontWeight: 600, textTransform: 'none', borderRadius: 2,
-                    borderColor: 'divider', color: 'text.primary',
-                    '&:hover': { borderColor: 'primary.main', bgcolor: 'primary.50' },
+                    mb: 2.5,
+                    backgroundColor: 'rgba(147,0,10,0.2)',
+                    color: '#ffdad6',
+                    border: '1px solid rgba(147,0,10,0.4)',
+                    borderRadius: '8px',
+                    '& .MuiAlert-icon': { color: '#ffb4ab' },
                   }}
                 >
-                  Continue with Google
-                </Button>
+                  {error}
+                </Alert>
+              )}
 
-                <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 3 }}>
-                  Already have an account?{' '}
-                  <Link
-                    component="button"
-                    type="button"
-                    underline="hover"
-                    fontWeight={600}
-                    onClick={() => { setTab(0); setErrorMsg(null) }}
+              {/* ── Sign In form ── */}
+              {tab === 0 && (
+                <Box component="form" onSubmit={handleLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                  <TextField
+                    label="Email or Username"
+                    placeholder="Enter your university email"
+                    fullWidth
+                    size="small"
+                    {...loginForm.register('identifier', { required: 'Required' })}
+                    error={!!loginForm.formState.errors.identifier}
+                    helperText={loginForm.formState.errors.identifier?.message}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <EmailOutlinedIcon sx={{ fontSize: 18, color: '#8e909f' }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={inputSx}
+                  />
+                  <TextField
+                    label="Password"
+                    placeholder="••••••••"
+                    type={showPw ? 'text' : 'password'}
+                    fullWidth
+                    size="small"
+                    {...loginForm.register('password', { required: 'Required' })}
+                    error={!!loginForm.formState.errors.password}
+                    helperText={loginForm.formState.errors.password?.message}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LockOutlinedIcon sx={{ fontSize: 18, color: '#8e909f' }} />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            size="small"
+                            onClick={() => setShowPw(v => !v)}
+                            sx={{ color: '#8e909f', '&:hover': { color: '#dae2fd' } }}
+                          >
+                            {showPw
+                              ? <VisibilityOffOutlinedIcon fontSize="small" />
+                              : <VisibilityOutlinedIcon fontSize="small" />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={inputSx}
+                  />
+
+                  <Button
+                    type="submit"
+                    fullWidth
+                    size="large"
+                    disabled={loading}
+                    sx={{
+                      height: 44,
+                      background: 'linear-gradient(90deg, #b8c4ff 0%, #1e40af 100%)',
+                      color: '#001453',
+                      fontWeight: 700,
+                      fontSize: 14,
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 16px rgba(30,64,175,0.25)',
+                      mt: 0.5,
+                      '&:hover': { opacity: 0.9, background: 'linear-gradient(90deg, #b8c4ff 0%, #1e40af 100%)' },
+                      '&:disabled': { opacity: 0.6, color: '#001453' },
+                    }}
                   >
-                    Sign in
-                  </Link>
-                </Typography>
-              </Box>
-            )}
-          </Paper>
+                    {loading ? 'Signing in…' : 'Sign In'}
+                  </Button>
+                </Box>
+              )}
 
-          <Typography variant="caption" color="text.disabled" align="center" display="block" sx={{ mt: 3 }}>
-            By continuing you agree to the institution&apos;s terms of use.
-          </Typography>
+              {/* ── Register form ── */}
+              {tab === 1 && (
+                <Box component="form" onSubmit={handleRegister} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <TextField
+                    label="Full Name"
+                    placeholder="John Doe"
+                    fullWidth
+                    size="small"
+                    {...registerForm.register('fullName', { required: 'Required' })}
+                    error={!!registerForm.formState.errors.fullName}
+                    helperText={registerForm.formState.errors.fullName?.message}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <PersonOutlinedIcon sx={{ fontSize: 18, color: '#8e909f' }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={inputSx}
+                  />
+                  <TextField
+                    label="Email Address"
+                    placeholder="j.doe@university.edu"
+                    type="email"
+                    fullWidth
+                    size="small"
+                    {...registerForm.register('email', { required: 'Required' })}
+                    error={!!registerForm.formState.errors.email}
+                    helperText={registerForm.formState.errors.email?.message}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <EmailOutlinedIcon sx={{ fontSize: 18, color: '#8e909f' }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={inputSx}
+                  />
+                  <TextField
+                    label="Username (Optional)"
+                    placeholder="johndoe_24"
+                    fullWidth
+                    size="small"
+                    {...registerForm.register('username')}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Typography sx={{ color: '#8e909f', fontSize: 14, fontWeight: 500, lineHeight: 1 }}>@</Typography>
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={inputSx}
+                  />
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                    <TextField
+                      label="Password"
+                      placeholder="••••••••"
+                      type={showPw ? 'text' : 'password'}
+                      fullWidth
+                      size="small"
+                      {...registerForm.register('password', { required: 'Required', minLength: { value: 8, message: 'Min 8 chars' } })}
+                      error={!!registerForm.formState.errors.password}
+                      helperText={registerForm.formState.errors.password?.message}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <LockOutlinedIcon sx={{ fontSize: 18, color: '#8e909f' }} />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton size="small" onClick={() => setShowPw(v => !v)} sx={{ color: '#8e909f' }}>
+                              {showPw ? <VisibilityOffOutlinedIcon fontSize="small" /> : <VisibilityOutlinedIcon fontSize="small" />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={inputSx}
+                    />
+                    <TextField
+                      label="Confirm"
+                      placeholder="••••••••"
+                      type={showConfirmPw ? 'text' : 'password'}
+                      fullWidth
+                      size="small"
+                      {...registerForm.register('confirmPassword', { required: 'Required' })}
+                      error={!!registerForm.formState.errors.confirmPassword}
+                      helperText={registerForm.formState.errors.confirmPassword?.message}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <LockOutlinedIcon sx={{ fontSize: 18, color: '#8e909f' }} />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton size="small" onClick={() => setShowConfirmPw(v => !v)} sx={{ color: '#8e909f' }}>
+                              {showConfirmPw ? <VisibilityOffOutlinedIcon fontSize="small" /> : <VisibilityOutlinedIcon fontSize="small" />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={inputSx}
+                    />
+                  </Box>
+
+                  <Button
+                    type="submit"
+                    fullWidth
+                    size="large"
+                    disabled={loading}
+                    sx={{
+                      height: 44,
+                      background: 'linear-gradient(90deg, #b8c4ff 0%, #1e40af 100%)',
+                      color: '#001453',
+                      fontWeight: 700,
+                      fontSize: 14,
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 16px rgba(30,64,175,0.25)',
+                      mt: 0.5,
+                      '&:hover': { opacity: 0.9, background: 'linear-gradient(90deg, #b8c4ff 0%, #1e40af 100%)' },
+                      '&:disabled': { opacity: 0.6, color: '#001453' },
+                    }}
+                  >
+                    {loading ? 'Creating account…' : 'Create Account'}
+                  </Button>
+                </Box>
+              )}
+
+              {/* Divider */}
+              <Box sx={{ position: 'relative', my: 3.5, display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ flex: 1, height: 1, backgroundColor: 'rgba(68,70,83,0.15)' }} />
+                <Typography sx={{
+                  mx: 2,
+                  color: '#c4c5d5',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.15em',
+                  whiteSpace: 'nowrap',
+                }}>
+                  or continue with
+                </Typography>
+                <Box sx={{ flex: 1, height: 1, backgroundColor: 'rgba(68,70,83,0.15)' }} />
+              </Box>
+
+              {/* Google OAuth button */}
+              <Button
+                variant="outlined"
+                fullWidth
+                size="large"
+                onClick={() => { window.location.href = `${BACKEND_URL}/oauth2/authorization/google` }}
+                startIcon={
+                  <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                  </svg>
+                }
+                sx={{
+                  height: 44,
+                  borderColor: 'rgba(68,70,83,0.25)',
+                  backgroundColor: '#31394d',
+                  color: '#dae2fd',
+                  fontWeight: 600,
+                  fontSize: 13,
+                  borderRadius: '8px',
+                  '&:hover': {
+                    backgroundColor: '#2d3449',
+                    borderColor: 'rgba(68,70,83,0.4)',
+                  },
+                }}
+              >
+                Continue with Google
+              </Button>
+            </Box>
+          </Box>
+
+          {/* Footer links */}
+          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center', gap: 3 }}>
+            {['Privacy Policy', 'Terms of Service', 'Help Center'].map(link => (
+              <Typography
+                key={link}
+                component="a"
+                href="#"
+                sx={{
+                  color: '#8e909f',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.12em',
+                  textDecoration: 'none',
+                  '&:hover': { color: '#dae2fd' },
+                  transition: 'color 0.15s',
+                }}
+              >
+                {link}
+              </Typography>
+            ))}
+          </Box>
         </Box>
       </Box>
     </Box>

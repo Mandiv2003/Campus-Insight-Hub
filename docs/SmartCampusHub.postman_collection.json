@@ -229,7 +229,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Computer Lab 101\",\n  \"type\": \"LAB\",\n  \"capacity\": 40,\n  \"location\": \"Block A, Floor 1\",\n  \"description\": \"Main computer lab with 40 workstations\",\n  \"imageUrl\": null,\n  \"availabilityWindows\": [\n    {\n      \"id\": null,\n      \"dayOfWeek\": \"MONDAY\",\n      \"openTime\": \"08:00:00\",\n      \"closeTime\": \"17:00:00\"\n    },\n    {\n      \"id\": null,\n      \"dayOfWeek\": \"TUESDAY\",\n      \"openTime\": \"08:00:00\",\n      \"closeTime\": \"17:00:00\"\n    },\n    {\n      \"id\": null,\n      \"dayOfWeek\": \"WEDNESDAY\",\n      \"openTime\": \"08:00:00\",\n      \"closeTime\": \"17:00:00\"\n    }\n  ]\n}"
+              "raw": "{\n  \"name\": \"Computer Lab 101\",\n  \"type\": \"LAB\",\n  \"capacity\": 40,\n  \"location\": \"Block A, Floor 1\",\n  \"description\": \"Main computer lab with 40 workstations\",\n  \"imageUrl\": null,\n  \"availabilityWindows\": [\n    {\n      \"id\": null,\n      \"dayOfWeek\": \"MONDAY\",\n      \"startTime\": \"08:00:00\",\n      \"endTime\": \"17:00:00\"\n    },\n    {\n      \"id\": null,\n      \"dayOfWeek\": \"TUESDAY\",\n      \"startTime\": \"08:00:00\",\n      \"endTime\": \"17:00:00\"\n    },\n    {\n      \"id\": null,\n      \"dayOfWeek\": \"WEDNESDAY\",\n      \"startTime\": \"08:00:00\",\n      \"endTime\": \"17:00:00\"\n    }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/resources",
@@ -314,7 +314,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": null,\n  \"dayOfWeek\": \"FRIDAY\",\n  \"openTime\": \"09:00:00\",\n  \"closeTime\": \"13:00:00\"\n}"
+              "raw": "{\n  \"id\": null,\n  \"dayOfWeek\": \"FRIDAY\",\n  \"startTime\": \"09:00:00\",\n  \"endTime\": \"13:00:00\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/resources/{{resourceId}}/availability",
@@ -453,14 +453,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"rejectionReason\": \"No longer needed\"\n}"
+              "raw": "{\n  \"cancellationNote\": \"No longer needed\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/bookings/{{bookingId}}/cancel",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "bookings", "{{bookingId}}", "cancel"]
             },
-            "description": "Cancels a booking at any status. Body is optional."
+            "description": "Cancels a booking (PENDING or APPROVED). Body is optional — `cancellationNote` is stored but not required."
           }
         },
         {
@@ -565,7 +565,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "tickets"]
             },
-            "description": "Creates a new incident ticket. Status starts as OPEN.\n\n`category` values: ELECTRICAL | PLUMBING | HVAC | EQUIPMENT | NETWORK | SECURITY | CLEANING | OTHER\n`priority` values: LOW | MEDIUM | HIGH | CRITICAL\n\nAuto-saves `ticketId` variable."
+            "description": "Creates a new incident ticket. Status starts as OPEN.\n\n`category` values: ELECTRICAL | PLUMBING | IT_EQUIPMENT | FURNITURE | HVAC | SAFETY | OTHER\n`priority` values: LOW | MEDIUM | HIGH | CRITICAL\n\nAuto-saves `ticketId` variable."
           }
         },
         {
@@ -658,7 +658,7 @@
               "query": [
                 { "key": "status", "value": "OPEN", "description": "OPEN | IN_PROGRESS | RESOLVED | CLOSED | REJECTED", "disabled": true },
                 { "key": "priority", "value": "HIGH", "description": "LOW | MEDIUM | HIGH | CRITICAL", "disabled": true },
-                { "key": "category", "value": "ELECTRICAL", "description": "ELECTRICAL | PLUMBING | HVAC | EQUIPMENT | NETWORK | SECURITY | CLEANING | OTHER", "disabled": true },
+                { "key": "category", "value": "ELECTRICAL", "description": "ELECTRICAL | PLUMBING | IT_EQUIPMENT | FURNITURE | HVAC | SAFETY | OTHER", "disabled": true },
                 { "key": "assignedTo", "value": "{{technicianId}}", "description": "Filter by assigned technician ID", "disabled": true },
                 { "key": "page", "value": "0" },
                 { "key": "size", "value": "20" }
@@ -823,7 +823,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"content\": \"We have ordered the replacement part. Expected arrival in 2 days.\"\n}"
+              "raw": "{\n  \"body\": \"We have ordered the replacement part. Expected arrival in 2 days.\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/tickets/{{ticketId}}/comments",
@@ -846,7 +846,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"content\": \"Updated: Part has arrived and repair is scheduled for tomorrow.\"\n}"
+              "raw": "{\n  \"body\": \"Updated: Part has arrived and repair is scheduled for tomorrow.\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/tickets/{{ticketId}}/comments/{{commentId}}",
