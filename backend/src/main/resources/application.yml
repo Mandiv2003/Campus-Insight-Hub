@@ -13,6 +13,9 @@ spring:
   application:
     name: campus-insight-hub
 
+  main:
+    lazy-initialization: true
+
   # ── MongoDB Atlas ───────────────────────────────────────────────────────
   data:
     mongodb:
