@@ -17,7 +17,6 @@ import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined'
 import ConstructionOutlinedIcon from '@mui/icons-material/ConstructionOutlined'
 import { getMyBookings, cancelBooking } from '../../api/bookingApi'
 import type { Booking, BookingStatus } from '../../types/booking'
-import type { ResourceType } from '../../types/resource'
 import { format } from 'date-fns'
 
 const STATUSES: BookingStatus[] = ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED']

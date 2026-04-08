@@ -69,7 +69,7 @@ export default function StudentDashboardPage() {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
 
-  const firstName = user?.fullName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'there'
+  const firstName = user?.email?.split('@')[0] ?? 'there'
 
   useEffect(() => {
     const load = async () => {
