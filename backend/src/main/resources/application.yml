@@ -7,7 +7,7 @@
 # ============================================================
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 spring:
   application:
@@ -31,7 +31,7 @@ spring:
               - email
               - profile
             # Must match the URI registered in Google Cloud Console
-            redirect-uri: "http://localhost:8080/oauth2/callback/google"
+            redirect-uri: "${BACKEND_OAUTH_REDIRECT_URI:http://localhost:8080/oauth2/callback/google}"
 
   # ── File Upload ─────────────────────────────────────────────────────────
   servlet:
@@ -41,6 +41,8 @@ spring:
 
 # ── Application Properties ─────────────────────────────────────────────────
 app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
   jwt:
     # Must be >= 32 characters for HS256 signing
     secret: ${JWT_SECRET:smartcampus-dev-secret-key-at-least-32-chars-ok}
