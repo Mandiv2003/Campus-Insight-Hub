@@ -1,0 +1,57 @@
+# ============================================================
+# Smart Campus Operations Hub — Application Configuration
+# ============================================================
+# Sensitive values are loaded from environment variables.
+# For local development, override them in application-local.properties
+# (gitignored) by running with: -Dspring.profiles.active=local
+# ============================================================
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: campus-insight-hub
+
+  # ── MongoDB Atlas ───────────────────────────────────────────────────────
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      database: smartcampus
+
+  # ── Google OAuth2 ───────────────────────────────────────────────────────
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+            # Must match the URI registered in Google Cloud Console
+            redirect-uri: "http://localhost:8080/oauth2/callback/google"
+
+  # ── File Upload ─────────────────────────────────────────────────────────
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
+
+# ── Application Properties ─────────────────────────────────────────────────
+app:
+  jwt:
+    # Must be >= 32 characters for HS256 signing
+    secret: ${JWT_SECRET:smartcampus-dev-secret-key-at-least-32-chars-ok}
+    expiration-ms: 86400000   # 24 hours
+  oauth2:
+    # Frontend URL to redirect to after successful OAuth2 login
+    redirect-uri: ${FRONTEND_OAUTH_REDIRECT_URI:http://localhost:5173/oauth-callback}
+  upload-dir: ${UPLOAD_DIR:uploads}
+
+# ── Logging ────────────────────────────────────────────────────────────────
+logging:
+  level:
+    com.smartcampus: DEBUG
+    org.springframework.security: INFO

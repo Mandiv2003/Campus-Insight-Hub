@@ -1,11 +1,11 @@
 package com.smartcampus;
 
-import com.smartcampus.notification.NotificationRepository;
-import com.smartcampus.notification.NotificationService;
-import com.smartcampus.notification.NotificationType;
-import com.smartcampus.user.Role;
-import com.smartcampus.user.User;
-import com.smartcampus.user.UserRepository;
+import com.smartcampus.model.User;
+import com.smartcampus.model.enums.NotificationType;
+import com.smartcampus.model.enums.Role;
+import com.smartcampus.repository.NotificationRepository;
+import com.smartcampus.repository.UserRepository;
+import com.smartcampus.service.NotificationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -29,7 +29,7 @@ class NotificationServiceTest {
             .build());
 
         notificationService.notifyBookingDecision(
-            user.getId(), "Lab Booking", NotificationType.BOOKING_APPROVED, java.util.UUID.randomUUID()
+            user.getId(), "Lab Booking", NotificationType.BOOKING_APPROVED, java.util.UUID.randomUUID().toString()
         );
 
         long count = notificationRepository.countByRecipientIdAndReadFalse(user.getId());
@@ -44,7 +44,7 @@ class NotificationServiceTest {
             .build());
 
         notificationService.notifyNewComment(
-            user.getId(), user.getId(), "My Ticket", java.util.UUID.randomUUID()
+            user.getId(), user.getId(), "My Ticket", java.util.UUID.randomUUID().toString()
         );
 
         long count = notificationRepository.countByRecipientIdAndReadFalse(user.getId());

@@ -3,8 +3,10 @@
   backend/.mvn/
   *.class
   *.jar
+  backend/src/main/resources/application-local.properties
 
   # Frontend
+  node_modules/
   frontend/node_modules/
   frontend/dist/
 

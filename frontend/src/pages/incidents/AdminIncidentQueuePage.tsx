@@ -1,189 +1,212 @@
 import { useState, useEffect } from 'react'
-import {
-  Box, Typography, Grid, Tab, Tabs, CircularProgress, Pagination,
-  MenuItem, Select, FormControl, InputLabel, Button,
-  Dialog, DialogTitle, DialogContent, DialogActions, TextField,
-} from '@mui/material'
 import { useNavigate } from 'react-router-dom'
-import { getAdminTickets, updateTicketStatus } from '../../api/incidentApi'
-import TicketCard from './components/TicketCard'
-import type { Ticket, TicketStatus, TicketPriority, TicketCategory } from '../../types/incident'
+import {
+  Box, Button, Table, TableHead, TableBody, TableRow, TableCell,
+  TableContainer, Paper, CircularProgress, Alert, Select, MenuItem,
+  FormControl, InputLabel, Dialog, DialogTitle, DialogContent,
+  DialogActions, TextField, Typography, Autocomplete,
+} from '@mui/material'
+import { getAdminTickets, updateTicketStatus, assignTechnician } from '../../api/incidentApi'
+import { getTechnicians } from '../../api/userApi'
+import type { Ticket, TicketStatus } from '../../types/incident'
+import { format } from 'date-fns'
+import PageHeader from '../../components/common/PageHeader'
+import StatusBadge from '../../components/common/StatusBadge'
+import EmptyState from '../../components/common/EmptyState'
 
-const STATUS_TABS: Array<{ label: string; value: TicketStatus | '' }> = [
-  { label: 'All',         value: '' },
-  { label: 'Open',        value: 'OPEN' },
-  { label: 'In Progress', value: 'IN_PROGRESS' },
-  { label: 'Resolved',    value: 'RESOLVED' },
-  { label: 'Closed',      value: 'CLOSED' },
-  { label: 'Rejected',    value: 'REJECTED' },
-]
+const STATUSES: TicketStatus[] = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'REJECTED']
+
+interface TechUser { id: string; fullName: string; email: string }
+interface StatusDialogState { ticket: Ticket; newStatus: TicketStatus; extra: string }
 
 export default function AdminIncidentQueuePage() {
+  const navigate = useNavigate()
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState(0)
-  const [page, setPage] = useState(0)
-  const [totalPages, setTotalPages] = useState(0)
-  const [priority, setPriority] = useState<TicketPriority | ''>('')
-  const [category, setCategory] = useState<TicketCategory | ''>('')
-
-  // Status-change dialog state
-  const [statusDialog, setStatusDialog] = useState<{
-    open: boolean; ticketId: string; newStatus: TicketStatus
-  } | null>(null)
-  const [dialogNote, setDialogNote] = useState('')
-
-  const navigate = useNavigate()
-
-  useEffect(() => { load() }, [tab, page, priority, category])
+  const [error, setError] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState('OPEN')
+  const [technicians, setTechnicians] = useState<TechUser[]>([])
+  const [statusDialog, setStatusDialog] = useState<StatusDialogState | null>(null)
+  const [assignDialog, setAssignDialog] = useState<Ticket | null>(null)
+  const [selectedTech, setSelectedTech] = useState<TechUser | null>(null)
+  const [actionLoading, setActionLoading] = useState(false)
 
   const load = async () => {
     setLoading(true)
+    setError(null)
     try {
-      const params: Record<string, unknown> = { page, size: 20 }
-      const statusValue = STATUS_TABS[tab].value
-      if (statusValue) params.status = statusValue
-      if (priority)   params.priority = priority
-      if (category)   params.category = category
-      const res = await getAdminTickets(params)
-      setTickets(res.data.data.content)
-      setTotalPages(res.data.data.totalPages)
+      const params: Record<string, string> = {}
+      if (statusFilter) params.status = statusFilter
+      const [ticketRes, techRes] = await Promise.all([
+        getAdminTickets(params),
+        getTechnicians(),
+      ])
+      setTickets(ticketRes.data?.data?.content ?? ticketRes.data?.data ?? [])
+      setTechnicians(techRes.data?.data ?? [])
+    } catch {
+      setError('Failed to load tickets.')
     } finally {
       setLoading(false)
     }
   }
 
-  const openStatusDialog = (ticketId: string, newStatus: TicketStatus) => {
-    setDialogNote('')
-    setStatusDialog({ open: true, ticketId, newStatus })
+  useEffect(() => { load() }, [statusFilter])
+
+  const handleStatusUpdate = async () => {
+    if (!statusDialog) return
+    const { ticket, newStatus, extra } = statusDialog
+    setActionLoading(true)
+    try {
+      const payload: Record<string, string> = { status: newStatus }
+      if (newStatus === 'RESOLVED') payload.resolutionNotes = extra
+      if (newStatus === 'REJECTED') payload.rejectionReason = extra
+      await updateTicketStatus(ticket.id, payload)
+      setTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, status: newStatus } : t))
+      setStatusDialog(null)
+    } catch {
+      setError('Failed to update status.')
+    } finally {
+      setActionLoading(false)
+    }
   }
 
-  const handleStatusChange = async () => {
-    if (!statusDialog) return
-    const { ticketId, newStatus } = statusDialog
-    const body: Record<string, string> = { status: newStatus }
-    if (newStatus === 'RESOLVED')  body.resolutionNotes = dialogNote
-    if (newStatus === 'REJECTED')  body.rejectionReason = dialogNote
-    await updateTicketStatus(ticketId, body)
-    setStatusDialog(null)
-    load()
+  const handleAssign = async () => {
+    if (!assignDialog || !selectedTech) return
+    setActionLoading(true)
+    try {
+      await assignTechnician(assignDialog.id, selectedTech.id)
+      setTickets(prev => prev.map(t => t.id === assignDialog.id
+        ? { ...t, assignedToId: selectedTech.id, assignedToName: selectedTech.fullName }
+        : t))
+      setAssignDialog(null)
+      setSelectedTech(null)
+    } catch {
+      setError('Failed to assign technician.')
+    } finally {
+      setActionLoading(false)
+    }
   }
+
+  const needsExtra = (s: TicketStatus) => s === 'RESOLVED' || s === 'REJECTED'
 
   return (
-    <Box p={3}>
-      <Typography variant="h5" fontWeight={700} mb={2}>Incident Queue</Typography>
+    <Box>
+      <PageHeader title="Incident Queue" subtitle="Manage and resolve campus incident tickets" />
 
-      <Box display="flex" gap={2} mb={2} flexWrap="wrap">
-        <FormControl size="small" sx={{ minWidth: 130 }}>
-          <InputLabel>Priority</InputLabel>
-          <Select value={priority} label="Priority"
-                  onChange={(e) => { setPriority(e.target.value as TicketPriority | ''); setPage(0) }}>
-            <MenuItem value="">All</MenuItem>
-            {['LOW','MEDIUM','HIGH','CRITICAL'].map((p) => (
-              <MenuItem key={p} value={p}>{p}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <FormControl size="small" sx={{ minWidth: 160 }}>
-          <InputLabel>Category</InputLabel>
-          <Select value={category} label="Category"
-                  onChange={(e) => { setCategory(e.target.value as TicketCategory | ''); setPage(0) }}>
-            <MenuItem value="">All</MenuItem>
-            {['ELECTRICAL','PLUMBING','IT_EQUIPMENT','FURNITURE','HVAC','SAFETY','OTHER'].map((c) => (
-              <MenuItem key={c} value={c}>{c.replace('_', ' ')}</MenuItem>
-            ))}
+      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+        <FormControl sx={{ minWidth: 180 }}>
+          <InputLabel>Status</InputLabel>
+          <Select value={statusFilter} label="Status" onChange={e => setStatusFilter(e.target.value)}>
+            <MenuItem value="">All statuses</MenuItem>
+            {STATUSES.map(s => <MenuItem key={s} value={s}>{s.replace(/_/g, ' ')}</MenuItem>)}
           </Select>
         </FormControl>
       </Box>
 
-      <Tabs value={tab}
-            onChange={(_, v) => { setTab(v); setPage(0) }}
-            sx={{ mb: 3 }} variant="scrollable" scrollButtons="auto">
-        {STATUS_TABS.map((t) => <Tab key={t.value} label={t.label} />)}
-      </Tabs>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       {loading ? (
-        <Box display="flex" justifyContent="center" py={8}><CircularProgress /></Box>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>
       ) : tickets.length === 0 ? (
-        <Typography color="text.secondary" textAlign="center" py={8}>No tickets found.</Typography>
+        <EmptyState title="No tickets" description="No tickets match the selected filter." />
       ) : (
-        <Grid container spacing={2}>
-          {tickets.map((t) => (
-            <Grid item xs={12} sm={6} md={4} key={t.id}>
-              <Box>
-                <TicketCard ticket={t} />
-                <Box display="flex" gap={0.5} mt={0.5} flexWrap="wrap">
-                  {t.status === 'OPEN' && (
-                    <Button size="small" variant="outlined"
-                            onClick={() => openStatusDialog(t.id, 'IN_PROGRESS')}>
-                      Start
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Title</TableCell>
+                <TableCell>Category</TableCell>
+                <TableCell>Priority</TableCell>
+                <TableCell>Reporter</TableCell>
+                <TableCell>Assigned</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Created</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {tickets.map(t => (
+                <TableRow key={t.id}>
+                  <TableCell sx={{ fontWeight: 600 }}>{t.title}</TableCell>
+                  <TableCell sx={{ color: '#6b7280' }}>{t.category.replace(/_/g, ' ')}</TableCell>
+                  <TableCell><StatusBadge label={t.priority} /></TableCell>
+                  <TableCell sx={{ color: '#6b7280' }}>{t.reportedByName}</TableCell>
+                  <TableCell sx={{ color: t.assignedToName ? '#374151' : '#9ca3af', fontStyle: t.assignedToName ? 'normal' : 'italic' }}>
+                    {t.assignedToName ?? 'Unassigned'}
+                  </TableCell>
+                  <TableCell><StatusBadge label={t.status} /></TableCell>
+                  <TableCell sx={{ color: '#6b7280' }}>{format(new Date(t.createdAt), 'dd MMM')}</TableCell>
+                  <TableCell align="right">
+                    <Button size="small" onClick={() => navigate(`/tickets/${t.id}`)}>View</Button>
+                    <Button size="small" sx={{ ml: 1 }} onClick={() => setAssignDialog(t)}>Assign</Button>
+                    <Button
+                      size="small" sx={{ ml: 1 }}
+                      onClick={() => setStatusDialog({ ticket: t, newStatus: 'IN_PROGRESS', extra: '' })}
+                    >
+                      Status
                     </Button>
-                  )}
-                  {(t.status === 'OPEN' || t.status === 'IN_PROGRESS') && (
-                    <>
-                      <Button size="small" variant="contained" color="success"
-                              onClick={() => openStatusDialog(t.id, 'RESOLVED')}>
-                        Resolve
-                      </Button>
-                      <Button size="small" variant="outlined" color="error"
-                              onClick={() => openStatusDialog(t.id, 'REJECTED')}>
-                        Reject
-                      </Button>
-                    </>
-                  )}
-                  {t.status === 'RESOLVED' && (
-                    <Button size="small" variant="outlined"
-                            onClick={() => openStatusDialog(t.id, 'CLOSED')}>
-                      Close
-                    </Button>
-                  )}
-                  <Button size="small" onClick={() => navigate(`/tickets/${t.id}`)}>
-                    View
-                  </Button>
-                </Box>
-              </Box>
-            </Grid>
-          ))}
-        </Grid>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
 
-      {totalPages > 1 && (
-        <Box display="flex" justifyContent="center" mt={4}>
-          <Pagination count={totalPages} page={page + 1}
-                      onChange={(_, p) => setPage(p - 1)} />
-        </Box>
-      )}
-
-      {/* Status-change dialog */}
-      <Dialog open={!!statusDialog?.open} onClose={() => setStatusDialog(null)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {statusDialog?.newStatus === 'RESOLVED' && 'Resolve Ticket'}
-          {statusDialog?.newStatus === 'REJECTED' && 'Reject Ticket'}
-          {statusDialog?.newStatus === 'IN_PROGRESS' && 'Mark In Progress'}
-          {statusDialog?.newStatus === 'CLOSED' && 'Close Ticket'}
-        </DialogTitle>
-        <DialogContent>
-          {(statusDialog?.newStatus === 'RESOLVED' || statusDialog?.newStatus === 'REJECTED') && (
+      {/* Status change dialog */}
+      <Dialog open={!!statusDialog} onClose={() => setStatusDialog(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>Update Ticket Status</DialogTitle>
+        <DialogContent sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <FormControl fullWidth sx={{ mt: 1 }}>
+            <InputLabel>New Status</InputLabel>
+            <Select
+              value={statusDialog?.newStatus ?? 'OPEN'}
+              label="New Status"
+              onChange={e => setStatusDialog(d => d ? { ...d, newStatus: e.target.value as TicketStatus, extra: '' } : null)}
+            >
+              {STATUSES.map(s => <MenuItem key={s} value={s}>{s.replace(/_/g, ' ')}</MenuItem>)}
+            </Select>
+          </FormControl>
+          {statusDialog && needsExtra(statusDialog.newStatus) && (
             <TextField
-              autoFocus fullWidth multiline minRows={3}
-              label={statusDialog.newStatus === 'RESOLVED' ? 'Resolution Notes *' : 'Rejection Reason *'}
-              value={dialogNote}
-              onChange={(e) => setDialogNote(e.target.value)}
-              sx={{ mt: 1 }}
+              label={statusDialog.newStatus === 'RESOLVED' ? 'Resolution notes *' : 'Rejection reason *'}
+              multiline rows={3} fullWidth
+              value={statusDialog.extra}
+              onChange={e => setStatusDialog(d => d ? { ...d, extra: e.target.value } : null)}
+              required
             />
           )}
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setStatusDialog(null)}>Cancel</Button>
           <Button
-            variant="contained"
-            onClick={handleStatusChange}
-            disabled={
-              (statusDialog?.newStatus === 'RESOLVED' || statusDialog?.newStatus === 'REJECTED')
-              && !dialogNote.trim()
-            }
+            variant="contained" onClick={handleStatusUpdate}
+            disabled={actionLoading || (!!statusDialog && needsExtra(statusDialog.newStatus) && !statusDialog.extra.trim())}
           >
-            Confirm
+            {actionLoading ? 'Saving…' : 'Update Status'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Assign dialog */}
+      <Dialog open={!!assignDialog} onClose={() => setAssignDialog(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>Assign Technician</DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Assign a technician to <strong>{assignDialog?.title}</strong>
+          </Typography>
+          <Autocomplete
+            options={technicians}
+            getOptionLabel={t => `${t.fullName} (${t.email})`}
+            value={selectedTech}
+            onChange={(_, v) => setSelectedTech(v)}
+            renderInput={params => <TextField {...params} label="Select technician" />}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setAssignDialog(null)}>Cancel</Button>
+          <Button variant="contained" onClick={handleAssign} disabled={!selectedTech || actionLoading}>
+            {actionLoading ? 'Assigning…' : 'Assign'}
           </Button>
         </DialogActions>
       </Dialog>
