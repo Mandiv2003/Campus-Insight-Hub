@@ -46,15 +46,16 @@ public class FileStorageService {
                 : "attachment";
         String storedName = UUID.randomUUID() + "_" + originalName;
 
-        Path ticketDir = Paths.get(appProperties.uploadDir(), "tickets", ticketId);
+        Path dest = Paths.get(appProperties.uploadDir(), "tickets", ticketId, storedName)
+                .toAbsolutePath().normalize();
         try {
-            Files.createDirectories(ticketDir);
-            file.transferTo(ticketDir.resolve(storedName).toFile());
+            Files.createDirectories(dest.getParent());
+            file.transferTo(dest.toFile());
         } catch (IOException e) {
             throw new ConflictException("Could not store file: " + e.getMessage());
         }
 
-        return ticketDir.resolve(storedName).toString();
+        return dest.toString();
     }
 
     /**
