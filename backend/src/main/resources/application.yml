@@ -54,6 +54,10 @@ app:
     # Frontend URL to redirect to after successful OAuth2 login
     redirect-uri: ${FRONTEND_OAUTH_REDIRECT_URI:http://localhost:5173/oauth-callback}
   upload-dir: ${UPLOAD_DIR:uploads}
+  resend:
+    api-key: ${RESEND_API_KEY:}
+    from: ${RESEND_FROM:Campus Hub <noreply@campushub.dev>}
+    base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
 
 # ── Logging ────────────────────────────────────────────────────────────────
 logging:
