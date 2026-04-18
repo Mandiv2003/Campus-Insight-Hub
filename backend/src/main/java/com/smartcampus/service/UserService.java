@@ -25,6 +25,10 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    private final EmailService emailService;
+
+    public record UpsertResult(User user, boolean isNew) {}
+
 
     public User registerLocalUser(String fullName, String email, String username, String rawPassword) {
         if (userRepository.findByEmail(email).isPresent()) {
@@ -43,7 +47,9 @@ public class UserService {
                 .role(Role.USER)
                 .active(true)
                 .build();
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        emailService.sendWelcome(saved.getEmail(), saved.getFullName());
+        return saved;
     }
 
     public User loginLocalUser(String identifier, String rawPassword) {
@@ -59,13 +65,13 @@ public class UserService {
         return user;
     }
 
-    public User upsertGoogleUser(String email, String name, String providerId, String avatarUrl) {
+    public UpsertResult upsertGoogleUser(String email, String name, String providerId, String avatarUrl) {
         return userRepository.findByProviderId(providerId)
                 .map(existing -> {
                     existing.setFullName(name);
                     existing.setAvatarUrl(avatarUrl);
                     existing.setUpdatedAt(LocalDateTime.now());
-                    return userRepository.save(existing);
+                    return new UpsertResult(userRepository.save(existing), false);
                 })
                 .orElseGet(() -> {
                     User user = User.builder()
@@ -77,7 +83,7 @@ public class UserService {
                             .role(Role.USER)
                             .active(true)
                             .build();
-                    return userRepository.save(user);
+                    return new UpsertResult(userRepository.save(user), true);
                 });
     }
 

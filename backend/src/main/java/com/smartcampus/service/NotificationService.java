@@ -4,6 +4,7 @@ import com.smartcampus.dto.notification.NotificationDto;
 import com.smartcampus.exception.ResourceNotFoundException;
 import com.smartcampus.mapper.NotificationMapper;
 import com.smartcampus.model.Notification;
+import com.smartcampus.model.User;
 import com.smartcampus.model.enums.NotificationType;
 import com.smartcampus.repository.NotificationRepository;
 import com.smartcampus.repository.UserRepository;
@@ -24,6 +25,7 @@ public class NotificationService {
     private final UserRepository userRepository;
     private final NotificationMapper notificationMapper;
     private final MongoTemplate mongoTemplate;
+    private final EmailService emailService;
 
     // ── Called by BookingService ─────────────────────────────────────────
     public void notifyBookingDecision(String recipientId, String bookingTitle,
@@ -36,29 +38,44 @@ public class NotificationService {
         };
         String message = "Your booking \"" + bookingTitle + "\" has been "
                 + type.name().toLowerCase().replace("booking_", "");
-        save(recipientId, type, title, message, "BOOKING", bookingId);
+        User recipient = save(recipientId, type, title, message, "BOOKING", bookingId);
+        switch (type) {
+            case BOOKING_APPROVED  -> emailService.sendBookingApproved(
+                    recipient.getEmail(), recipient.getFullName(), bookingTitle, bookingId);
+            case BOOKING_REJECTED  -> emailService.sendBookingRejected(
+                    recipient.getEmail(), recipient.getFullName(), bookingTitle);
+            case BOOKING_CANCELLED -> emailService.sendBookingCancelled(
+                    recipient.getEmail(), recipient.getFullName(), bookingTitle);
+            default -> {}
+        }
     }
 
     // ── Called by IncidentTicketService ─────────────────────────────────
     public void notifyTicketStatusChange(String reportedById, String ticketTitle,
                                          String newStatus, String ticketId) {
         String message = "Your ticket \"" + ticketTitle + "\" status changed to " + newStatus;
-        save(reportedById, NotificationType.TICKET_STATUS_CHANGED,
+        User recipient = save(reportedById, NotificationType.TICKET_STATUS_CHANGED,
                 "Ticket Status Updated", message, "TICKET", ticketId);
+        emailService.sendTicketStatusChanged(
+                recipient.getEmail(), recipient.getFullName(), ticketTitle, newStatus, ticketId);
     }
 
     public void notifyNewComment(String ticketReporterId, String commentAuthorId,
                                   String ticketTitle, String ticketId) {
         if (ticketReporterId.equals(commentAuthorId)) return;
         String message = "A new comment was added on your ticket \"" + ticketTitle + "\"";
-        save(ticketReporterId, NotificationType.TICKET_COMMENT_ADDED,
+        User recipient = save(ticketReporterId, NotificationType.TICKET_COMMENT_ADDED,
                 "New Comment", message, "TICKET", ticketId);
+        emailService.sendNewComment(
+                recipient.getEmail(), recipient.getFullName(), ticketTitle, ticketId);
     }
 
     public void notifyTechnicianAssigned(String technicianId, String ticketTitle, String ticketId) {
         String message = "You have been assigned to ticket \"" + ticketTitle + "\"";
-        save(technicianId, NotificationType.TICKET_ASSIGNED,
+        User recipient = save(technicianId, NotificationType.TICKET_ASSIGNED,
                 "Ticket Assigned", message, "TICKET", ticketId);
+        emailService.sendTechnicianAssigned(
+                recipient.getEmail(), recipient.getFullName(), ticketTitle, ticketId);
     }
 
     // ── Query operations ─────────────────────────────────────────────────
@@ -96,9 +113,9 @@ public class NotificationService {
     }
 
     // ── Internal helper ──────────────────────────────────────────────────
-    private void save(String recipientId, NotificationType type, String title,
+    private User save(String recipientId, NotificationType type, String title,
                       String message, String entityType, String entityId) {
-        userRepository.findById(recipientId)
+        User recipient = userRepository.findById(recipientId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Notification n = Notification.builder()
                 .recipientId(recipientId)
@@ -110,5 +127,6 @@ public class NotificationService {
                 .read(false)
                 .build();
         notificationRepository.save(n);
+        return recipient;
     }
 }

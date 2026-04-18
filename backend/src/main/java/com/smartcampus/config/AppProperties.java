@@ -15,7 +15,8 @@ import org.springframework.validation.annotation.Validated;
 public record AppProperties(
         @Valid JwtProperties jwt,
         @NotBlank String uploadDir,
-        @Valid OAuth2Properties oauth2
+        @Valid OAuth2Properties oauth2,
+        @Valid ResendProperties resend
 ) {
 
     public record JwtProperties(
@@ -25,5 +26,11 @@ public record AppProperties(
 
     public record OAuth2Properties(
             @NotBlank String redirectUri
+    ) {}
+
+    public record ResendProperties(
+            String apiKey,
+            String from,
+            String baseUrl
     ) {}
 }
