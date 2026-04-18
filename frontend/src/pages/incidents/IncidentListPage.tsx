@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Box, CircularProgress } from '@mui/material'
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined'
-import { getMyTickets } from '../../api/incidentApi'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import { getMyTickets, deleteTicket } from '../../api/incidentApi'
 import type { Ticket, TicketStatus, TicketPriority } from '../../types/incident'
+import { useAuth } from '../../context/AuthContext'
 import { format } from 'date-fns'
 
 const C = {
@@ -89,11 +91,15 @@ const selectStyle: React.CSSProperties = {
 
 export default function IncidentListPage() {
   const navigate = useNavigate()
+  const { user, isAdmin } = useAuth()
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState('')
   const [priorityFilter, setPriorityFilter] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
 
   const load = async () => {
     setLoading(true)
@@ -113,6 +119,30 @@ export default function IncidentListPage() {
   }
 
   useEffect(() => { load() }, [statusFilter, priorityFilter])
+
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(null), 4000)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await deleteTicket(deleteTarget.id)
+      setTickets(prev => prev.filter(t => t.id !== deleteTarget.id))
+      setToast({ msg: 'Ticket deleted successfully.', ok: true })
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        ?? 'Failed to delete ticket.'
+      setToast({ msg, ok: false })
+    } finally {
+      setDeleting(false)
+      setDeleteTarget(null)
+    }
+  }
 
   return (
     <Box sx={{ minHeight: '100vh', background: C.bg, color: C.onSurface, p: { xs: 2, md: 4 } }}>
@@ -255,24 +285,111 @@ export default function IncidentListPage() {
                       {format(new Date(t.createdAt), 'MMM d')}
                     </td>
                     <td style={{ padding: '18px 20px', textAlign: 'right' }}>
-                      <button
-                        onClick={e => { e.stopPropagation(); navigate(`/tickets/${t.id}`) }}
-                        style={{
-                          background: 'none', border: 'none', color: C.primary,
-                          fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                          padding: '4px 8px', borderRadius: 6,
-                          transition: 'color 0.15s',
-                        }}
-                        onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-                        onMouseLeave={e => (e.currentTarget.style.color = C.primary)}
-                      >
-                        View
-                      </button>
+                      <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end', alignItems: 'center' }}>
+                        <button
+                          onClick={e => { e.stopPropagation(); navigate(`/tickets/${t.id}`) }}
+                          style={{
+                            background: 'none', border: 'none', color: C.primary,
+                            fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                            padding: '4px 8px', borderRadius: 6,
+                            transition: 'color 0.15s',
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+                          onMouseLeave={e => (e.currentTarget.style.color = C.primary)}
+                        >
+                          View
+                        </button>
+                        {(t.reportedById === user?.id || isAdmin()) && t.status === 'OPEN' && (
+                          <button
+                            title="Delete ticket"
+                            onClick={e => { e.stopPropagation(); setDeleteTarget({ id: t.id, title: t.title }) }}
+                            style={{
+                              background: 'none', border: 'none', color: '#f87171',
+                              cursor: 'pointer', padding: '4px 6px', borderRadius: 6,
+                              display: 'flex', alignItems: 'center',
+                              transition: 'background 0.15s',
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#f8717115')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                          >
+                            <DeleteOutlineIcon sx={{ fontSize: 18 }} />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 24, right: 24, zIndex: 2000,
+          background: toast.ok ? '#166534' : '#7f1d1d',
+          border: `1px solid ${toast.ok ? '#4ade80' : '#f87171'}`,
+          color: toast.ok ? '#4ade80' : '#f87171',
+          padding: '12px 20px', borderRadius: 10, fontSize: 14, fontWeight: 600,
+          boxShadow: '0 8px 32px #00000060', maxWidth: 360,
+        }}>
+          {toast.msg}
+        </div>
+      )}
+
+      {/* Delete confirmation dialog */}
+      {deleteTarget && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1500,
+          background: '#00000080', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}
+          onClick={() => !deleting && setDeleteTarget(null)}
+        >
+          <div
+            style={{
+              background: C.card, borderRadius: 16, padding: '32px 28px', maxWidth: 440, width: '90%',
+              border: `1px solid ${C.outlineVariant}`,
+              boxShadow: '0 24px 64px #00000080',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ fontSize: 32, marginBottom: 12, textAlign: 'center' }}>🗑️</div>
+            <h2 style={{ margin: '0 0 10px', fontSize: 18, fontWeight: 800, color: C.onSurface, textAlign: 'center' }}>
+              Delete Ticket?
+            </h2>
+            <p style={{ margin: '0 0 8px', fontSize: 14, color: C.onSurfaceVariant, textAlign: 'center' }}>
+              <strong style={{ color: C.onSurface }}>{deleteTarget.title}</strong>
+            </p>
+            <p style={{ margin: '0 0 28px', fontSize: 13, color: '#94a3b8', textAlign: 'center', lineHeight: 1.6 }}>
+              This action cannot be undone and will permanently delete all comments and attachments.
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                style={{
+                  background: C.surfaceHigh, color: C.onSurfaceVariant,
+                  border: 'none', borderRadius: 8, padding: '10px 24px',
+                  fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting}
+                style={{
+                  background: '#7f1d1d', color: '#f87171',
+                  border: '1px solid #f8717140', borderRadius: 8, padding: '10px 24px',
+                  fontWeight: 700, fontSize: 14, cursor: deleting ? 'not-allowed' : 'pointer',
+                  opacity: deleting ? 0.7 : 1,
+                }}
+              >
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
           </div>
         </div>
       )}
