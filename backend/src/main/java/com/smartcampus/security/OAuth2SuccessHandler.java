@@ -1,8 +1,9 @@
 package com.smartcampus.security;
 
 import com.smartcampus.config.AppProperties;
-import com.smartcampus.model.User;
+import com.smartcampus.service.EmailService;
 import com.smartcampus.service.UserService;
+import com.smartcampus.service.UserService.UpsertResult;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
     private final AppProperties appProperties;
+    private final EmailService emailService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -36,8 +38,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         log.debug("OAuth2 login success for: {}", email);
 
-        User user  = userService.upsertGoogleUser(email, name, providerId, avatarUrl);
-        String jwt = jwtTokenProvider.generateToken(user);
+        UpsertResult result = userService.upsertGoogleUser(email, name, providerId, avatarUrl);
+        if (result.isNew()) {
+            emailService.sendWelcome(result.user().getEmail(), result.user().getFullName());
+        }
+        String jwt = jwtTokenProvider.generateToken(result.user());
 
         String redirectUrl = appProperties.oauth2().redirectUri() + "?token=" + jwt;
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
